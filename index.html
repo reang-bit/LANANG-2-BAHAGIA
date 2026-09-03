@@ -244,6 +244,12 @@
           </div>
 
           <!-- Ringkasan Bayar -->
+<!-- Tambahan Input Nama Pembeli -->
+            <div class="pt-2 border-t border-slate-200/60">
+              <label class="block text-xs font-semibold text-slate-600 mb-1.5">Nama Pembeli</label>
+              <input type="text" id="inputNamaPembeli" placeholder="Contoh: Bpk. Budi (Opsional)" 
+                     class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none">
+            </div>
           <div class="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/60 space-y-4">
             <div class="flex justify-between items-center font-bold text-slate-800">
               <span class="text-sm">Total Transaksi</span>
@@ -317,6 +323,8 @@
       <p class="text-[8px] mt-0.5">Jl. Raya Jagapura Lor Blok Nyibanda</p>
       <p class="text-[8px] mt-0.5">Solusi Kebutuhan Anda</p>
       <p id="strukTanggal" class="text-[8px] mt-1 text-slate-600"></p>
+      <p id="strukNamaPembeli" class="text-[9px] font-bold mt-1 text-left">Pembeli: -</p>
+    </div>
     </div>
     
     <table class="w-full mb-2">
@@ -707,7 +715,7 @@ async function konekPrinterBluetooth() {
 
 // Fungsi mengirim perintah cetak teks dan QR Code ke printer thermal 58mm
 // Fungsi mengirim perintah cetak teks dan QR Code ke printer thermal 58mm secara aman (Chunked)
-async function cetakLangsungThermal(total, bayar, kembalian) {
+async function cetakLangsungThermal(namaPembeli, total, bayar, kembalian) {
   if (!bluetoothCharacteristic) {
     await konekPrinterBluetooth();
     if (!bluetoothCharacteristic) return;
@@ -731,8 +739,10 @@ async function cetakLangsungThermal(total, bayar, kembalian) {
     cetakText += "Solusi Kebutuhan Anda\n";
     cetakText += "--------------------------------\n"; 
     cetakText += LEFT;
+    cetakText += `Pelanggan : ${namaPembeli}\n`; // <-- Cetak Nama Pembeli di Struk
+    cetakText += `Tanggal   : ${new Date().toLocaleString('id-ID')}\n`;
+    cetakText += "--------------------------------\n";
 
-    // Looping item belanja dari array keranjang
     keranjang.forEach(item => {
       const subtotal = item.harga * item.qty;
       cetakText += `${item.nama}\n`;
@@ -744,33 +754,15 @@ async function cetakLangsungThermal(total, bayar, kembalian) {
     cetakText += `BAYAR    : Rp ${bayar.toLocaleString('id-ID')}\n`;
     cetakText += `KEMBALI  : Rp ${kembalian.toLocaleString('id-ID')}\n`;
     cetakText += "--------------------------------\n";
-    cetakText += CENTER + "*** TERIMA KASIH ***\n\n";
-
-    // === TAMBAHAN CATATAN KAKI & QR CODE ===
-    cetakText += "Kunjungi situs kami:\n\n";
-    
-    const qrUrl = "https://gjos4836-lang.github.io/LANANG-2-BAHAGIA/";
-    const storeLength = qrUrl.length + 3;
-    const pL = String.fromCharCode(storeLength % 256);
-    const pH = String.fromCharCode(Math.floor(storeLength / 256));
-
-    cetakText += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
-    cetakText += GS + '(k' + '\x03\x00\x31\x43\x05';
-    cetakText += GS + '(k' + '\x03\x00\x31\x45\x30';
-    cetakText += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
-    cetakText += GS + '(k' + '\x03\x00\x31\x51\x30';
-    
-    cetakText += "\n\n\n" + CUT;
+    cetakText += CENTER + "*** TERIMA KASIH ***\n\n\n" + CUT;
 
     const encoder = new TextEncoder();
     const dataBytes = encoder.encode(cetakText);
     
-    // === PENGIRIMAN DATA SECARA BERTAHAP (CHUNK) AGAR TIDAK OVERFLOW ===
-    const CHUNK_SIZE = 512; // Ukuran aman per paket Bluetooth
+    const CHUNK_SIZE = 512; 
     for (let i = 0; i < dataBytes.length; i += CHUNK_SIZE) {
       const chunk = dataBytes.slice(i, i + CHUNK_SIZE);
       await bluetoothCharacteristic.writeValue(chunk);
-      // Jeda kecil antar chunk untuk memberi waktu buffer printer memproses data
       await new Promise(resolve => setTimeout(resolve, 50)); 
     }
 
@@ -778,7 +770,7 @@ async function cetakLangsungThermal(total, bayar, kembalian) {
   } catch (error) {
     showLoading(false);
     console.error("Gagal mencetak:", error);
-    alert("⚠️ Gagal mencetak ke printer. Pastikan koneksi Bluetooth stabil.");
+    alert("⚠️ Gagal mencetak ke printer.");
   }
 }
     
@@ -792,6 +784,7 @@ async function prosesBayar() {
 
   const total = keranjang.reduce((sum, item) => sum + (item.harga * item.qty), 0);
   const bayar = parseFloat(document.getElementById('inputBayar').value) || 0;
+  const namaPembeli = document.getElementById('inputNamaPembeli').value.trim() || "Umum"; // <-- Ambil Nama Pembeli
   const kembalian = bayar - total;
 
   if (bayar < total) {
@@ -799,7 +792,6 @@ async function prosesBayar() {
     return;
   }
 
-  // 1. Buat rincian teks barang & format array cartData
   const rincianItemsText = keranjang.map(i => `${i.nama} (${i.qty}x)`).join(", ");
   const cartDataJson = JSON.stringify(keranjang.map(i => ({
     id: i.id,
@@ -807,13 +799,12 @@ async function prosesBayar() {
     qty: i.qty
   })));
 
-  // 2. Tampilkan Overlay Loading
   showLoading(true, "Menyimpan dan mencetak Struk...");
 
   try {
-    // 3. Kirim data transaksi ke Google Apps Script
     const params = new URLSearchParams({
       action: 'tambahTransaksi',
+      namaPembeli: namaPembeli, // <-- Kirim ke Apps Script
       items: rincianItemsText,
       total: total,
       bayar: bayar,
@@ -828,26 +819,22 @@ async function prosesBayar() {
     const result = await res.json();
 
     showLoading(false);
-
-    if (result.success) {
-      alert("✅ Transaksi berhasil disimpan & stok diperbarui!");
-    } else {
+    if (!result.success) {
       alert("⚠️ Transaksi tersimpan dengan catatan: " + (result.message || "Gagal update stok"));
     }
   } catch (err) {
     showLoading(false);
     console.error("Gagal terhubung ke database:", err);
-    alert("⚠️ Gagal menyimpan database. Memproses cetak lokal...");
   }
 
-  // 4. Proses Cetak Thermal Bluetooth
-  await cetakLangsungThermal(total, bayar, kembalian);
+  // 4. Proses Cetak Thermal Bluetooth dengan Nama Pembeli
+  await cetakLangsungThermal(namaPembeli, total, bayar, kembalian);
 
-  // 5. Kosongkan keranjang & muat ulang stok dari Google Sheets
+  // 5. Kosongkan keranjang & reset input nama
   kosongkanKeranjang();
+  document.getElementById('inputNamaPembeli').value = '';
   muatDataProdukFromSheets();
 }
-
 // Fungsi memperbarui visual struk digital pada halaman HTML kasir
 function cetakStruk(total, bayar) {
   document.getElementById('strukTanggal').innerText = new Date().toLocaleString('id-ID');
