@@ -18,11 +18,11 @@
     .font-mono { font-family: 'JetBrains Mono', monospace; }
 
     @media print {
-      @page { margin: 0; size: 58mm auto; }
+      @page { margin: 10mm; size: A4 portrait; }
       body * { visibility: hidden; }
-      #areaStruk, #areaStruk * { visibility: visible; }
-      #areaStruk { 
-        position: absolute; left: 0; top: 0; width: 58mm; padding: 4px; margin: 0;
+      #areaPrintRekap, #areaPrintRekap * { visibility: visible; }
+      #areaPrintRekap { 
+        position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0;
       }
       .no-print { display: none !important; }
     }
@@ -384,6 +384,23 @@
     </div>
   </div>
 
+  <!-- AREA PRINT LAPORAN REKAP (A4 Professional) -->
+  <div id="areaPrintRekap" class="hidden print:block p-6 bg-white font-sans text-black">
+    <div class="text-center pb-4 mb-4 border-b-2 border-black">
+      <h1 class="text-xl font-black tracking-wide uppercase">LANANG 2 BAHAGIA</h1>
+      <p class="text-xs">Jl. Raya Jagapura Lor Blok Nyibanda — Solusi Kebutuhan Rumah Anda</p>
+      <h2 id="printJudulLaporan" class="text-sm font-bold uppercase mt-3">LAPORAN REKAPITULASI TRANSAKSI</h2>
+      <p id="printInfoWaktu" class="text-xs text-slate-600 mt-0.5"></p>
+    </div>
+    <div id="printKontenTabel"></div>
+    <div class="mt-8 flex justify-end text-xs">
+      <div class="text-center">
+        <p>Jagapura Lor, <span id="printTglCetak"></span></p>
+        <p class="font-bold mt-12">Pimpinan / Kasir</p>
+      </div>
+    </div>
+  </div>
+
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbzUacb5knMH5qbZ_q3AuT_FuMR7vpxuRyoDj9VBFBLNa15TpAtmJs6jn8vk46K4SL3EXQ/exec";
     const KASIR_PASSWORD = "Reang12345";
@@ -391,6 +408,8 @@
     let produkList = [];
     let keranjang = [];
     let isKasirUnlocked = false;
+
+    let cacheDataRekap = { harian: [], bulanan: [] };
 
     window.onload = function() {
       muatDataProdukFromSheets();
@@ -739,6 +758,7 @@
         .then(res => {
           showLoading(false);
           if (res.success) {
+            cacheDataRekap = res;
             renderRekapHarian(res.harian);
             renderRekapBulanan(res.bulanan);
           } else {
@@ -761,7 +781,7 @@
         return;
       }
 
-      dataHarian.forEach(h => {
+      dataHarian.forEach((h, index) => {
         let listHtml = '';
         h.listTransaksi.forEach(trx => {
           listHtml += `
@@ -782,14 +802,19 @@
 
         container.innerHTML += `
           <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-            <div class="bg-slate-100/70 p-4 border-b border-slate-200/60 flex justify-between items-center">
+            <div class="bg-slate-100/70 p-4 border-b border-slate-200/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
                 <h3 class="font-bold text-sm text-slate-800">📅 Tanggal: ${h.tanggal}</h3>
                 <p class="text-[11px] text-slate-500 font-medium">Total Transaksi: ${h.listTransaksi.length} pesanan</p>
               </div>
-              <div class="text-right">
-                <span class="text-[10px] uppercase font-bold text-slate-400 block">Omset Harian</span>
-                <span class="font-black text-sm text-emerald-700">Rp ${h.totalOmset.toLocaleString('id-ID')}</span>
+              <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                <div class="text-right">
+                  <span class="text-[10px] uppercase font-bold text-slate-400 block">Omset Harian</span>
+                  <span class="font-black text-sm text-emerald-700">Rp ${h.totalOmset.toLocaleString('id-ID')}</span>
+                </div>
+                <button onclick="cetakRekapSpesifik('harian', ${index})" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow">
+                  <span>🖨️</span> Cetak Rekap
+                </button>
               </div>
             </div>
             <div class="p-4 space-y-2">
@@ -809,7 +834,7 @@
         return;
       }
 
-      dataBulanan.forEach(b => {
+      dataBulanan.forEach((b, index) => {
         let listHtml = '';
         b.listTransaksi.forEach(trx => {
           listHtml += `
@@ -829,14 +854,19 @@
 
         container.innerHTML += `
           <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-            <div class="bg-slate-100/70 p-4 border-b border-slate-200/60 flex justify-between items-center">
+            <div class="bg-slate-100/70 p-4 border-b border-slate-200/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
                 <h3 class="font-bold text-sm text-slate-800">🗓️ Bulan: ${b.bulan}</h3>
                 <p class="text-[11px] text-slate-500 font-medium">Total Transaksi: ${b.listTransaksi.length} pesanan</p>
               </div>
-              <div class="text-right">
-                <span class="text-[10px] uppercase font-bold text-slate-400 block">Omset Bulanan</span>
-                <span class="font-black text-sm text-emerald-700">Rp ${b.totalOmset.toLocaleString('id-ID')}</span>
+              <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                <div class="text-right">
+                  <span class="text-[10px] uppercase font-bold text-slate-400 block">Omset Bulanan</span>
+                  <span class="font-black text-sm text-emerald-700">Rp ${b.totalOmset.toLocaleString('id-ID')}</span>
+                </div>
+                <button onclick="cetakRekapSpesifik('bulanan', ${index})" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow">
+                  <span>🖨️</span> Cetak Rekap
+                </button>
               </div>
             </div>
             <div class="p-4 space-y-2">
@@ -845,6 +875,70 @@
           </div>
         `;
       });
+    }
+
+    function cetakRekapSpesifik(tipe, index) {
+      let dataObj = null;
+      let judul = "";
+
+      if (tipe === 'harian') {
+        dataObj = cacheDataRekap.harian[index];
+        judul = `REKAP HARIAN - TANGGAL: ${dataObj.tanggal}`;
+        document.getElementById('printInfoWaktu').innerText = `Periode Tanggal: ${dataObj.tanggal}`;
+      } else {
+        dataObj = cacheDataRekap.bulanan[index];
+        judul = `REKAP BULANAN - BULAN: ${dataObj.bulan}`;
+        document.getElementById('printInfoWaktu').innerText = `Periode Bulan: ${dataObj.bulan}`;
+      }
+
+      document.getElementById('printJudulLaporan').innerText = judul;
+      document.getElementById('printTglCetak').innerText = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+      let rowsHtml = '';
+      let grandTotal = 0;
+
+      dataObj.listTransaksi.forEach((trx, i) => {
+        grandTotal += Number(trx.total);
+        rowsHtml += `
+          <tr style="border-bottom: 1px solid #cbd5e1;">
+            <td style="padding: 8px; text-align: center; font-size: 11px;">${i + 1}</td>
+            <td style="padding: 8px; font-size: 11px;">${trx.waktu || '-'}</td>
+            <td style="padding: 8px; font-size: 11px; font-weight: bold;">${trx.pembeli}</td>
+            <td style="padding: 8px; font-size: 11px;">${trx.items}</td>
+            <td style="padding: 8px; text-align: right; font-size: 11px; font-weight: bold;">Rp ${Number(trx.total).toLocaleString('id-ID')}</td>
+          </tr>
+        `;
+      });
+
+      const tabelHtml = `
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+          <thead>
+            <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; text-transform: uppercase; font-size: 11px;">
+              <th style="padding: 8px; text-align: center; width: 40px;">No</th>
+              <th style="padding: 8px; text-align: left; width: 100px;">Waktu</th>
+              <th style="padding: 8px; text-align: left; width: 120px;">Pembeli</th>
+              <th style="padding: 8px; text-align: left;">Rincian Item</th>
+              <th style="padding: 8px; text-align: right; width: 120px;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+          <tfoot>
+            <tr style="background-color: #f8fafc; border-top: 2px solid #0f172a; font-weight: bold; font-size: 12px;">
+              <td colspan="4" style="padding: 10px; text-align: right;">TOTAL OMSET :</td>
+              <td style="padding: 10px; text-align: right; color: #047857;">Rp ${grandTotal.toLocaleString('id-ID')}</td>
+            </tr>
+          </tfoot>
+        </table>
+        <p style="margin-top: 12px; font-size: 11px;">Jumlah Total Transaksi: <strong>${dataObj.listTransaksi.length} pesanan</strong></p>
+      `;
+
+      document.getElementById('printKontenTabel').innerHTML = tabelHtml;
+
+      setTimeout(() => {
+        window.print();
+      }, 300);
     }
 
     let bluetoothDevice = null;
