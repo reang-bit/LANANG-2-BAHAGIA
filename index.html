@@ -18,7 +18,7 @@
     .font-mono { font-family: 'JetBrains Mono', monospace; }
 
     @media print {
-      @page { margin: 0; size: 58mm auto; } /* Diubah ke ukuran spesifik 58mm */
+      @page { margin: 0; size: 58mm auto; }
       body * { visibility: hidden; }
       #areaStruk, #areaStruk * { visibility: visible; }
       #areaStruk { 
@@ -207,12 +207,14 @@
               <span class="text-lg">🛒</span>
               <h2 class="text-base font-bold text-slate-800">Kasir Digital</h2>
             </div>
-            <button onclick="konekPrinterBluetooth()" class="text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl font-bold transition">
-              🦷 Hubungkan Printer
-            </button>
-            <button onclick="kosongkanKeranjang()" class="text-xs text-rose-600 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-xl font-bold transition">
-              Reset Keranjang
-            </button>
+            <div class="flex items-center gap-2">
+              <button onclick="konekPrinterBluetooth()" class="text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl font-bold transition">
+                🦷 Hubungkan Printer
+              </button>
+              <button onclick="kosongkanKeranjang()" class="text-xs text-rose-600 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-xl font-bold transition">
+                Reset Keranjang
+              </button>
+            </div>
           </div>
 
           <div class="mb-5">
@@ -244,32 +246,34 @@
           </div>
 
           <!-- Ringkasan Bayar -->
-<!-- Tambahan Input Nama Pembeli -->
-            <div class="pt-2 border-t border-slate-200/60">
+          <div class="space-y-4">
+            <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1.5">Nama Pembeli</label>
               <input type="text" id="inputNamaPembeli" placeholder="Contoh: Bpk. Budi (Opsional)" 
                      class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none">
             </div>
-          <div class="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/60 space-y-4">
-            <div class="flex justify-between items-center font-bold text-slate-800">
-              <span class="text-sm">Total Transaksi</span>
-              <span id="textTotal" class="text-xl sm:text-2xl text-emerald-700 font-extrabold">Rp 0</span>
-            </div>
 
-            <div class="pt-2 border-t border-slate-200/60">
-              <label class="block text-xs font-semibold text-slate-600 mb-1.5">Uang Diterima (Rp)</label>
-              <input type="number" id="inputBayar" oninput="hitungKembalian()" placeholder="0" 
-                     class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-lg font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none">
-            </div>
+            <div class="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/60 space-y-4">
+              <div class="flex justify-between items-center font-bold text-slate-800">
+                <span class="text-sm">Total Transaksi</span>
+                <span id="textTotal" class="text-xl sm:text-2xl text-emerald-700 font-extrabold">Rp 0</span>
+              </div>
 
-            <div class="flex justify-between items-center font-semibold text-sm pt-1">
-              <span class="text-slate-600">Kembalian:</span>
-              <span id="textKembalian" class="font-bold text-slate-800">Rp 0</span>
-            </div>
+              <div class="pt-2 border-t border-slate-200/60">
+                <label class="block text-xs font-semibold text-slate-600 mb-1.5">Uang Diterima (Rp)</label>
+                <input type="number" id="inputBayar" oninput="hitungKembalian()" placeholder="0" 
+                       class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-lg font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none">
+              </div>
 
-            <button onclick="prosesBayar()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow-lg shadow-emerald-600/20 transition active:scale-[0.99] mt-2">
-              💾 Simpan & Cetak Struk
-            </button>
+              <div class="flex justify-between items-center font-semibold text-sm pt-1">
+                <span class="text-slate-600">Kembalian:</span>
+                <span id="textKembalian" class="font-bold text-slate-800">Rp 0</span>
+              </div>
+
+              <button onclick="prosesBayar()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow-lg shadow-emerald-600/20 transition active:scale-[0.99] mt-2">
+                💾 Simpan & Cetak Struk
+              </button>
+            </div>
           </div>
         </div>
 
@@ -325,7 +329,6 @@
       <p id="strukTanggal" class="text-[8px] mt-1 text-slate-600"></p>
       <p id="strukNamaPembeli" class="text-[9px] font-bold mt-1 text-left">Pembeli: -</p>
     </div>
-    </div>
     
     <table class="w-full mb-2">
       <tbody id="strukItem" class="divide-y divide-dashed divide-slate-300"></tbody>
@@ -342,8 +345,7 @@
       <p class="mt-0.5">Barang yang sudah dibeli<br>tidak dapat ditukar/dikembalikan</p>
     </div>
   </div>
-</body>
-</html>
+
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbzUacb5knMH5qbZ_q3AuT_FuMR7vpxuRyoDj9VBFBLNa15TpAtmJs6jn8vk46K4SL3EXQ/exec";
     const KASIR_PASSWORD = "Reang12345";
