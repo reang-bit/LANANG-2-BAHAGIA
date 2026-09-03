@@ -30,7 +30,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
 
-  <!-- OVERLAY LOADING LOGIC -->
+  <!-- OVERLAY LOADING -->
   <div id="loadingOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
     <div class="bg-white p-6 rounded-2xl shadow-2xl flex items-center gap-4 border border-slate-100 max-w-xs w-full">
       <div class="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin shrink-0"></div>
@@ -46,7 +46,7 @@
           🔒
         </div>
         <h3 class="text-xl font-bold text-slate-800 tracking-tight">Akses Kasir Terkunci</h3>
-        <p class="text-xs text-slate-500 mt-1">Masukkan password otorisasi untuk membuka aplikasi kasir.</p>
+        <p class="text-xs text-slate-500 mt-1">Masukkan password otorisasi untuk membuka fitur kasir & rekap.</p>
       </div>
       
       <form onsubmit="verifikasiPassword(event)" class="space-y-4">
@@ -61,7 +61,7 @@
             Batal
           </button>
           <button type="submit" class="w-1/2 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-lg shadow-emerald-600/20 transition">
-            Masuk Kasir
+            Masuk Akses
           </button>
         </div>
       </form>
@@ -111,7 +111,7 @@
 
   <!-- NAVBAR / HEADER UTAMA -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-40 no-print">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col sm:flex-row justify-between items-center gap-4">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col lg:flex-row justify-between items-center gap-4">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-black text-xl shadow-md shadow-emerald-600/30">
           L
@@ -124,12 +124,15 @@
         </div>
       </div>
       
-      <div class="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200 w-full sm:w-auto">
-        <button id="btnTabProfil" onclick="switchTab('profil')" class="flex-1 sm:flex-none px-5 py-2 rounded-xl text-xs font-bold transition bg-white text-emerald-800 shadow-sm border border-slate-200/60">
-          ℹ️ Profil & Katalog
+      <div class="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200 w-full lg:w-auto overflow-x-auto gap-1">
+        <button id="btnTabProfil" onclick="switchTab('profil')" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-white text-emerald-800 shadow-sm border border-slate-200/60 whitespace-nowrap">
+          ℹ️ Katalog
         </button>
-        <button id="btnTabKasir" onclick="switchTab('kasir')" class="flex-1 sm:flex-none px-5 py-2 rounded-xl text-xs font-bold transition text-slate-600 hover:text-slate-900">
-          🛒 Halaman Kasir 🔒
+        <button id="btnTabKasir" onclick="switchTab('kasir')" class="px-4 py-2 rounded-xl text-xs font-bold transition text-slate-600 hover:text-slate-900 whitespace-nowrap">
+          🛒 Kasir 🔒
+        </button>
+        <button id="btnTabRekap" onclick="switchTab('rekap')" class="px-4 py-2 rounded-xl text-xs font-bold transition text-slate-600 hover:text-slate-900 whitespace-nowrap">
+          📊 Rekap Transaksi 🔒
         </button>
       </div>
     </div>
@@ -207,12 +210,12 @@
               <span class="text-lg">🛒</span>
               <h2 class="text-base font-bold text-slate-800">Kasir Digital</h2>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex gap-2">
               <button onclick="konekPrinterBluetooth()" class="text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl font-bold transition">
-                🦷 Hubungkan Printer
+                🦷 Printer
               </button>
               <button onclick="kosongkanKeranjang()" class="text-xs text-rose-600 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-xl font-bold transition">
-                Reset Keranjang
+                Reset
               </button>
             </div>
           </div>
@@ -225,7 +228,7 @@
           </div>
 
           <!-- Tabel Keranjang -->
-          <div class="overflow-hidden border border-slate-100 rounded-xl mb-6">
+          <div class="overflow-hidden border border-slate-100 rounded-xl mb-5">
             <div class="overflow-y-auto max-h-[35vh]">
               <table class="w-full text-xs text-left border-collapse">
                 <thead class="bg-slate-50 text-slate-500 font-semibold sticky top-0 border-b border-slate-100">
@@ -245,35 +248,33 @@
             </div>
           </div>
 
-          <!-- Ringkasan Bayar -->
-          <div class="space-y-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1.5">Nama Pembeli</label>
-              <input type="text" id="inputNamaPembeli" placeholder="Contoh: Bpk. Budi (Opsional)" 
-                     class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none">
+          <!-- Input Nama Pembeli -->
+          <div class="mb-4">
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Nama Pembeli</label>
+            <input type="text" id="inputNamaPembeli" placeholder="Contoh: Bpk. Budi (Opsional)" 
+                   class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none">
+          </div>
+
+          <div class="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/60 space-y-4">
+            <div class="flex justify-between items-center font-bold text-slate-800">
+              <span class="text-sm">Total Transaksi</span>
+              <span id="textTotal" class="text-xl sm:text-2xl text-emerald-700 font-extrabold">Rp 0</span>
             </div>
 
-            <div class="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/60 space-y-4">
-              <div class="flex justify-between items-center font-bold text-slate-800">
-                <span class="text-sm">Total Transaksi</span>
-                <span id="textTotal" class="text-xl sm:text-2xl text-emerald-700 font-extrabold">Rp 0</span>
-              </div>
-
-              <div class="pt-2 border-t border-slate-200/60">
-                <label class="block text-xs font-semibold text-slate-600 mb-1.5">Uang Diterima (Rp)</label>
-                <input type="number" id="inputBayar" oninput="hitungKembalian()" placeholder="0" 
-                       class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-lg font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none">
-              </div>
-
-              <div class="flex justify-between items-center font-semibold text-sm pt-1">
-                <span class="text-slate-600">Kembalian:</span>
-                <span id="textKembalian" class="font-bold text-slate-800">Rp 0</span>
-              </div>
-
-              <button onclick="prosesBayar()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow-lg shadow-emerald-600/20 transition active:scale-[0.99] mt-2">
-                💾 Simpan & Cetak Struk
-              </button>
+            <div class="pt-2 border-t border-slate-200/60">
+              <label class="block text-xs font-semibold text-slate-600 mb-1.5">Uang Diterima (Rp)</label>
+              <input type="number" id="inputBayar" oninput="hitungKembalian()" placeholder="0" 
+                     class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-lg font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none">
             </div>
+
+            <div class="flex justify-between items-center font-semibold text-sm pt-1">
+              <span class="text-slate-600">Kembalian:</span>
+              <span id="textKembalian" class="font-bold text-slate-800">Rp 0</span>
+            </div>
+
+            <button onclick="prosesBayar()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow-lg shadow-emerald-600/20 transition active:scale-[0.99]">
+              💾 Simpan & Cetak Struk
+            </button>
           </div>
         </div>
 
@@ -314,13 +315,50 @@
       </div>
     </div>
 
+    <!-- TAB REKAP TRANSAKSI -->
+    <div id="tabRekap" class="hidden space-y-6 max-w-5xl mx-auto">
+      <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800">📊 Rekapitulasi Omset & Transaksi</h2>
+          <p class="text-xs text-slate-500">Laporan omset harian dan bulanan lengkap beserta daftar item dan pembeli.</p>
+        </div>
+        <button onclick="muatDataRekap()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-2 shadow-sm">
+          <span>🔄</span> Refresh Rekap
+        </button>
+      </div>
+
+      <!-- Tombol Sub-Tab Rekap (Harian / Bulanan) -->
+      <div class="flex bg-slate-200/70 p-1 rounded-xl max-w-xs mx-auto">
+        <button id="btnSubHarian" onclick="switchSubRekap('harian')" class="flex-1 py-2 text-xs font-bold rounded-lg transition bg-white text-emerald-800 shadow-sm">
+          Rekap Harian
+        </button>
+        <button id="btnSubBulanan" onclick="switchSubRekap('bulanan')" class="flex-1 py-2 text-xs font-bold transition text-slate-600">
+          Rekap Bulanan
+        </button>
+      </div>
+
+      <!-- Konten Rekap Harian -->
+      <div id="kontenRekapHarian" class="space-y-4">
+        <div id="listRekapHarian" class="space-y-4">
+          <!-- Render via JS -->
+        </div>
+      </div>
+
+      <!-- Konten Rekap Bulanan -->
+      <div id="kontenRekapBulanan" class="space-y-4 hidden">
+        <div id="listRekapBulanan" class="space-y-4">
+          <!-- Render via JS -->
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <footer class="bg-white border-t border-slate-200 text-slate-500 text-center py-4 text-xs mt-auto no-print">
     <p class="font-medium">&copy; 2026 LANANG 2 BAHAGIA. All Rights Reserved.</p>
   </footer>
 
-  <!-- AREA STRUK THERMAL (Diubah ke 58mm) -->
+  <!-- AREA STRUK THERMAL (58mm) -->
   <div id="areaStruk" class="hidden print:block p-2 max-w-[58mm] mx-auto font-mono text-[10px] leading-tight text-black">
     <div class="text-center pb-2 mb-2 border-b border-black border-dashed">
       <h2 class="font-bold text-xs tracking-wide">LANANG 2 BAHAGIA</h2>
@@ -361,23 +399,54 @@
     function switchTab(tab) {
       const tabProfil = document.getElementById('tabProfil');
       const tabKasir = document.getElementById('tabKasir');
+      const tabRekap = document.getElementById('tabRekap');
+      
       const btnProfil = document.getElementById('btnTabProfil');
       const btnKasir = document.getElementById('btnTabKasir');
+      const btnRekap = document.getElementById('btnTabRekap');
+
+      if ((tab === 'kasir' || tab === 'rekap') && !isKasirUnlocked) {
+        bukaModalLogin();
+        return;
+      }
+
+      tabProfil.classList.add('hidden');
+      tabKasir.classList.add('hidden');
+      tabRekap.classList.add('hidden');
+
+      btnProfil.className = "px-4 py-2 rounded-xl text-xs font-bold transition text-slate-600 hover:text-slate-900 whitespace-nowrap";
+      btnKasir.className = "px-4 py-2 rounded-xl text-xs font-bold transition text-slate-600 hover:text-slate-900 whitespace-nowrap";
+      btnRekap.className = "px-4 py-2 rounded-xl text-xs font-bold transition text-slate-600 hover:text-slate-900 whitespace-nowrap";
 
       if (tab === 'profil') {
         tabProfil.classList.remove('hidden');
-        tabKasir.classList.add('hidden');
-        btnProfil.className = "flex-1 sm:flex-none px-5 py-2 rounded-xl text-xs font-bold transition bg-white text-emerald-800 shadow-sm border border-slate-200/60";
-        btnKasir.className = "flex-1 sm:flex-none px-5 py-2 rounded-xl text-xs font-bold transition text-slate-600 hover:text-slate-900";
+        btnProfil.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-white text-emerald-800 shadow-sm border border-slate-200/60 whitespace-nowrap";
       } else if (tab === 'kasir') {
-        if (!isKasirUnlocked) {
-          bukaModalLogin();
-          return;
-        }
-        tabProfil.classList.add('hidden');
         tabKasir.classList.remove('hidden');
-        btnKasir.className = "flex-1 sm:flex-none px-5 py-2 rounded-xl text-xs font-bold transition bg-white text-emerald-800 shadow-sm border border-slate-200/60";
-        btnProfil.className = "flex-1 sm:flex-none px-5 py-2 rounded-xl text-xs font-bold transition text-slate-600 hover:text-slate-900";
+        btnKasir.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-white text-emerald-800 shadow-sm border border-slate-200/60 whitespace-nowrap";
+      } else if (tab === 'rekap') {
+        tabRekap.classList.remove('hidden');
+        btnRekap.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-white text-emerald-800 shadow-sm border border-slate-200/60 whitespace-nowrap";
+        muatDataRekap();
+      }
+    }
+
+    function switchSubRekap(sub) {
+      const btnHarian = document.getElementById('btnSubHarian');
+      const btnBulanan = document.getElementById('btnSubBulanan');
+      const kontenHarian = document.getElementById('kontenRekapHarian');
+      const kontenBulanan = document.getElementById('kontenRekapBulanan');
+
+      if (sub === 'harian') {
+        btnHarian.className = "flex-1 py-2 text-xs font-bold rounded-lg transition bg-white text-emerald-800 shadow-sm";
+        btnBulanan.className = "flex-1 py-2 text-xs font-bold transition text-slate-600";
+        kontenHarian.classList.remove('hidden');
+        kontenBulanan.classList.add('hidden');
+      } else {
+        btnBulanan.className = "flex-1 py-2 text-xs font-bold rounded-lg transition bg-white text-emerald-800 shadow-sm";
+        btnHarian.className = "flex-1 py-2 text-xs font-bold transition text-slate-600";
+        kontenBulanan.classList.remove('hidden');
+        kontenHarian.classList.add('hidden');
       }
     }
 
@@ -474,7 +543,6 @@
 
     function bukaModalEdit(id) {
       if (!isKasirUnlocked) {
-        alert("🔒 Fitur ini terkunci! Silakan masuk ke 'Halaman Kasir' terlebih dahulu untuk memasukkan password otorisasi.");
         bukaModalLogin();
         return;
       }
@@ -502,12 +570,7 @@
       const harga = parseFloat(document.getElementById('editHargaBarang').value);
       const stok = parseInt(document.getElementById('editStokBarang').value);
 
-      if (!nama || isNaN(harga) || isNaN(stok)) {
-        alert("⚠️ Mohon isi semua field dengan benar!");
-        return;
-      }
-
-      showLoading(true, "Memperbarui produk di Spreadsheet...");
+      showLoading(true, "Memperbarui produk...");
 
       const params = new URLSearchParams({
         action: 'editProduk',
@@ -526,21 +589,13 @@
             alert("✅ Perubahan barang berhasil disimpan!");
             muatDataProdukFromSheets();
           } else {
-            alert("⚠️ Gagal memperbarui barang di Spreadsheet.");
+            alert("⚠️ Gagal memperbarui barang.");
           }
         })
         .catch(err => {
           showLoading(false);
           tutupModalEdit();
-          console.warn("Update offline/lokal.", err);
-          
-          const idx = produkList.findIndex(p => String(p.id) === String(id));
-          if (idx !== -1) {
-            produkList[idx] = { id, nama, harga, stok };
-            renderTabelKatalogAwal(produkList);
-            populateDropdownKasir(produkList);
-          }
-          alert("⚠️ Disimpan secara lokal (Spreadsheet tidak merespons).");
+          alert("⚠️ Gagal terhubung ke Spreadsheet.");
         });
     }
 
@@ -561,12 +616,7 @@
       const harga = parseFloat(document.getElementById('inputHargaBarang').value);
       const stok = parseInt(document.getElementById('inputStokBarang').value);
 
-      if (!nama || isNaN(harga) || isNaN(stok)) {
-        alert("⚠️ Silakan isi seluruh data produk dengan benar!");
-        return;
-      }
-
-      showLoading(true, "Menyimpan barang baru ke Spreadsheet...");
+      showLoading(true, "Menyimpan barang baru...");
 
       const params = new URLSearchParams({
         action: 'tambahProduk',
@@ -579,7 +629,7 @@
         .then(res => res.json())
         .then(res => {
           showLoading(false);
-          alert("✅ Barang berhasil ditambahkan ke Spreadsheet!");
+          alert("✅ Barang berhasil ditambahkan!");
           document.getElementById('inputNamaBarang').value = '';
           document.getElementById('inputHargaBarang').value = '';
           document.getElementById('inputStokBarang').value = '';
@@ -587,17 +637,7 @@
         })
         .catch(err => {
           showLoading(false);
-          console.warn("Gagal terhubung ke Apps Script, menambahkan ke lokal.", err);
-          
-          const newId = String(Date.now());
-          produkList.push({ id: newId, nama: nama, harga: harga, stok: stok });
-          renderTabelKatalogAwal(produkList);
-          populateDropdownKasir(produkList);
-          
-          document.getElementById('inputNamaBarang').value = '';
-          document.getElementById('inputHargaBarang').value = '';
-          document.getElementById('inputStokBarang').value = '';
-          alert("⚠️ Disimpan secara lokal (Spreadsheet tidak merespons).");
+          alert("⚠️ Gagal menyimpan ke Spreadsheet.");
         });
     }
 
@@ -613,13 +653,11 @@
       if (!produk) return;
 
       const itemAda = keranjang.find(item => String(item.id) === String(id));
-
       if (itemAda) {
         itemAda.qty++;
       } else {
         keranjang.push({ ...produk, qty: 1 });
       }
-
       updateKeranjangUI();
     }
 
@@ -691,178 +729,263 @@
       keranjang = [];
       document.getElementById('inputBayar').value = '';
       updateKeranjangUI();
-    }let bluetoothDevice = null;
-let bluetoothCharacteristic = null;
-
-// Fungsi untuk menghubungkan ke printer Bluetooth
-async function konekPrinterBluetooth() {
-  try {
-    showLoading(true, "Mencari Printer Bluetooth...");
-    bluetoothDevice = await navigator.bluetooth.requestDevice({
-      acceptAllDevices: true,
-      optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
-    });
-
-    const server = await bluetoothDevice.gatt.connect();
-    const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
-    bluetoothCharacteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
-    
-    showLoading(false);
-    alert("✅ Printer Bluetooth Berhasil Terhubung!");
-  } catch (error) {
-    showLoading(false);
-    console.error("Gagal konek printer:", error);
-    alert("⚠️ Gagal terhubung ke printer. Pastikan Bluetooth aktif.");
-  }
-}
-
-// Fungsi mengirim perintah cetak teks dan QR Code ke printer thermal 58mm
-// Fungsi mengirim perintah cetak teks dan QR Code ke printer thermal 58mm secara aman (Chunked)
-async function cetakLangsungThermal(namaPembeli, total, bayar, kembalian) {
-  if (!bluetoothCharacteristic) {
-    await konekPrinterBluetooth();
-    if (!bluetoothCharacteristic) return;
-  }
-
-  try {
-    showLoading(true, "Mencetak Struk...");
-    
-    const ESC = '\x1B';
-    const GS = '\x1D';
-    const INIT = ESC + '@';
-    const CENTER = ESC + 'a' + '\x01';
-    const LEFT = ESC + 'a' + '\x00';
-    const BOLD_ON = ESC + 'E' + '\x01';
-    const BOLD_OFF = ESC + 'E' + '\x00';
-    const CUT = GS + 'V' + '\x41' + '\x03';
-
-    let cetakText = INIT;
-    cetakText += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
-    cetakText += "Jl. Raya Jagapura Lor - Nyibanda\n";
-    cetakText += "Solusi Kebutuhan Anda\n";
-    cetakText += "--------------------------------\n"; 
-    cetakText += LEFT;
-    cetakText += `Pelanggan : ${namaPembeli}\n`; // <-- Cetak Nama Pembeli di Struk
-    cetakText += `Tanggal   : ${new Date().toLocaleString('id-ID')}\n`;
-    cetakText += "--------------------------------\n";
-
-    keranjang.forEach(item => {
-      const subtotal = item.harga * item.qty;
-      cetakText += `${item.nama}\n`;
-      cetakText += `  ${item.qty} x ${item.harga.toLocaleString('id-ID')}   Rp ${subtotal.toLocaleString('id-ID')}\n`;
-    });
-
-    cetakText += "--------------------------------\n";
-    cetakText += `TOTAL    : Rp ${total.toLocaleString('id-ID')}\n`;
-    cetakText += `BAYAR    : Rp ${bayar.toLocaleString('id-ID')}\n`;
-    cetakText += `KEMBALI  : Rp ${kembalian.toLocaleString('id-ID')}\n`;
-    cetakText += "--------------------------------\n";
-    cetakText += CENTER + "*** TERIMA KASIH ***\n\n\n" + CUT;
-
-    const encoder = new TextEncoder();
-    const dataBytes = encoder.encode(cetakText);
-    
-    const CHUNK_SIZE = 512; 
-    for (let i = 0; i < dataBytes.length; i += CHUNK_SIZE) {
-      const chunk = dataBytes.slice(i, i + CHUNK_SIZE);
-      await bluetoothCharacteristic.writeValue(chunk);
-      await new Promise(resolve => setTimeout(resolve, 50)); 
     }
 
-    showLoading(false);
-  } catch (error) {
-    showLoading(false);
-    console.error("Gagal mencetak:", error);
-    alert("⚠️ Gagal mencetak ke printer.");
-  }
-}
-    
-// Fungsi validasi, hitung total, dan memproses pembayaran (Sudah Diperbaiki)
-// Fungsi validasi, simpan ke Spreadsheet, dan cetak struk
-async function prosesBayar() {
-  if (keranjang.length === 0) {
-    alert("⚠️ Keranjang belanja masih kosong!");
-    return;
-  }
+    function muatDataRekap() {
+      showLoading(true, "Mengambil data rekapitulasi...");
 
-  const total = keranjang.reduce((sum, item) => sum + (item.harga * item.qty), 0);
-  const bayar = parseFloat(document.getElementById('inputBayar').value) || 0;
-  const namaPembeli = document.getElementById('inputNamaPembeli').value.trim() || "Umum"; // <-- Ambil Nama Pembeli
-  const kembalian = bayar - total;
-
-  if (bayar < total) {
-    alert("⚠️ Uang yang diterima kurang dari total transaksi!");
-    return;
-  }
-
-  const rincianItemsText = keranjang.map(i => `${i.nama} (${i.qty}x)`).join(", ");
-  const cartDataJson = JSON.stringify(keranjang.map(i => ({
-    id: i.id,
-    nama: i.nama,
-    qty: i.qty
-  })));
-
-  showLoading(true, "Menyimpan dan mencetak Struk...");
-
-  try {
-    const params = new URLSearchParams({
-      action: 'tambahTransaksi',
-      namaPembeli: namaPembeli, // <-- Kirim ke Apps Script
-      items: rincianItemsText,
-      total: total,
-      bayar: bayar,
-      kembali: kembalian,
-      cartData: cartDataJson
-    });
-
-    const res = await fetch(`${API_URL}?${params.toString()}`, { 
-      method: 'GET', 
-      redirect: 'follow' 
-    });
-    const result = await res.json();
-
-    showLoading(false);
-    if (!result.success) {
-      alert("⚠️ Transaksi tersimpan dengan catatan: " + (result.message || "Gagal update stok"));
+      fetch(`${API_URL}?action=getRekap`, { method: "GET", redirect: "follow" })
+        .then(res => res.json())
+        .then(res => {
+          showLoading(false);
+          if (res.success) {
+            renderRekapHarian(res.harian);
+            renderRekapBulanan(res.bulanan);
+          } else {
+            alert("Gagal memuat rekap data.");
+          }
+        })
+        .catch(err => {
+          showLoading(false);
+          console.error(err);
+          alert("Terjadi kesalahan saat mengambil rekap.");
+        });
     }
-  } catch (err) {
-    showLoading(false);
-    console.error("Gagal terhubung ke database:", err);
-  }
 
-  // 4. Proses Cetak Thermal Bluetooth dengan Nama Pembeli
-  await cetakLangsungThermal(namaPembeli, total, bayar, kembalian);
+    function renderRekapHarian(dataHarian) {
+      const container = document.getElementById('listRekapHarian');
+      container.innerHTML = '';
 
-  // 5. Kosongkan keranjang & reset input nama
-  kosongkanKeranjang();
-  document.getElementById('inputNamaPembeli').value = '';
-  muatDataProdukFromSheets();
-}
-// Fungsi memperbarui visual struk digital pada halaman HTML kasir
-function cetakStruk(total, bayar) {
-  document.getElementById('strukTanggal').innerText = new Date().toLocaleString('id-ID');
-  const strukBody = document.getElementById('strukItem');
-  strukBody.innerHTML = '';
+      if (!dataHarian || dataHarian.length === 0) {
+        container.innerHTML = `<div class="bg-white p-6 rounded-2xl border text-center text-slate-400 text-xs">Belum ada data transaksi harian.</div>`;
+        return;
+      }
 
-  keranjang.forEach(item => {
-    strukBody.innerHTML += `
-      <tr class="py-0.5">
-        <td class="py-0.5" colspan="2">
-          <div class="font-bold">${item.nama}</div>
-          <div class="flex justify-between text-slate-600">
-            <span>${item.qty} x ${Number(item.harga).toLocaleString('id-ID')}</span>
-            <span>Rp ${(item.harga * item.qty).toLocaleString('id-ID')}</span>
+      dataHarian.forEach(h => {
+        let listHtml = '';
+        h.listTransaksi.forEach(trx => {
+          listHtml += `
+            <div class="py-2.5 px-3 bg-slate-50 rounded-xl border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-xs text-slate-800">👤 ${trx.pembeli}</span>
+                  <span class="text-[10px] text-slate-400 bg-white px-2 py-0.5 rounded border">⏰ ${trx.waktu}</span>
+                </div>
+                <p class="text-xs text-slate-600 mt-1">🛒 <strong>Items:</strong> ${trx.items}</p>
+              </div>
+              <span class="font-extrabold text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
+                Rp ${trx.total.toLocaleString('id-ID')}
+              </span>
+            </div>
+          `;
+        });
+
+        container.innerHTML += `
+          <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <div class="bg-slate-100/70 p-4 border-b border-slate-200/60 flex justify-between items-center">
+              <div>
+                <h3 class="font-bold text-sm text-slate-800">📅 Tanggal: ${h.tanggal}</h3>
+                <p class="text-[11px] text-slate-500 font-medium">Total Transaksi: ${h.listTransaksi.length} pesanan</p>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] uppercase font-bold text-slate-400 block">Omset Harian</span>
+                <span class="font-black text-sm text-emerald-700">Rp ${h.totalOmset.toLocaleString('id-ID')}</span>
+              </div>
+            </div>
+            <div class="p-4 space-y-2">
+              ${listHtml}
+            </div>
           </div>
-        </td>
-      </tr>
-    `;
-  });
+        `;
+      });
+    }
 
-      document.getElementById('strukTotal').innerText = `Rp ${total.toLocaleString('id-ID')}`;
-      document.getElementById('strukBayar').innerText = `Rp ${bayar.toLocaleString('id-ID')}`;
-      document.getElementById('strukKembali').innerText = `Rp ${(bayar - total).toLocaleString('id-ID')}`;
+    function renderRekapBulanan(dataBulanan) {
+      const container = document.getElementById('listRekapBulanan');
+      container.innerHTML = '';
 
-      window.print();
+      if (!dataBulanan || dataBulanan.length === 0) {
+        container.innerHTML = `<div class="bg-white p-6 rounded-2xl border text-center text-slate-400 text-xs">Belum ada data transaksi bulanan.</div>`;
+        return;
+      }
+
+      dataBulanan.forEach(b => {
+        let listHtml = '';
+        b.listTransaksi.forEach(trx => {
+          listHtml += `
+            <div class="py-2.5 px-3 bg-slate-50 rounded-xl border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-xs text-slate-800">👤 ${trx.pembeli}</span>
+                </div>
+                <p class="text-xs text-slate-600 mt-1">🛒 <strong>Items:</strong> ${trx.items}</p>
+              </div>
+              <span class="font-extrabold text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
+                Rp ${trx.total.toLocaleString('id-ID')}
+              </span>
+            </div>
+          `;
+        });
+
+        container.innerHTML += `
+          <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <div class="bg-slate-100/70 p-4 border-b border-slate-200/60 flex justify-between items-center">
+              <div>
+                <h3 class="font-bold text-sm text-slate-800">🗓️ Bulan: ${b.bulan}</h3>
+                <p class="text-[11px] text-slate-500 font-medium">Total Transaksi: ${b.listTransaksi.length} pesanan</p>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] uppercase font-bold text-slate-400 block">Omset Bulanan</span>
+                <span class="font-black text-sm text-emerald-700">Rp ${b.totalOmset.toLocaleString('id-ID')}</span>
+              </div>
+            </div>
+            <div class="p-4 space-y-2">
+              ${listHtml}
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    let bluetoothDevice = null;
+    let bluetoothCharacteristic = null;
+
+    async function konekPrinterBluetooth() {
+      try {
+        showLoading(true, "Mencari Printer Bluetooth...");
+        bluetoothDevice = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
+        });
+
+        const server = await bluetoothDevice.gatt.connect();
+        const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
+        bluetoothCharacteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
+        
+        showLoading(false);
+        alert("✅ Printer Bluetooth Berhasil Terhubung!");
+      } catch (error) {
+        showLoading(false);
+        console.error(error);
+        alert("⚠️ Gagal terhubung ke printer.");
+      }
+    }
+
+    async function cetakLangsungThermal(namaPembeli, total, bayar, kembalian) {
+      if (!bluetoothCharacteristic) {
+        await konekPrinterBluetooth();
+        if (!bluetoothCharacteristic) return;
+      }
+
+      try {
+        showLoading(true, "Mencetak Struk...");
+        
+        const ESC = '\x1B';
+        const GS = '\x1D';
+        const INIT = ESC + '@';
+        const CENTER = ESC + 'a' + '\x01';
+        const LEFT = ESC + 'a' + '\x00';
+        const BOLD_ON = ESC + 'E' + '\x01';
+        const BOLD_OFF = ESC + 'E' + '\x00';
+        const CUT = GS + 'V' + '\x41' + '\x03';
+
+        let cetakText = INIT;
+        cetakText += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
+        cetakText += "Jl. Raya Jagapura Lor - Nyibanda\n";
+        cetakText += "Solusi Kebutuhan Anda\n";
+        cetakText += "--------------------------------\n"; 
+        cetakText += LEFT;
+        cetakText += `Pelanggan : ${namaPembeli}\n`;
+        cetakText += `Tanggal   : ${new Date().toLocaleString('id-ID')}\n`;
+        cetakText += "--------------------------------\n";
+
+        keranjang.forEach(item => {
+          const subtotal = item.harga * item.qty;
+          cetakText += `${item.nama}\n`;
+          cetakText += `  ${item.qty} x ${item.harga.toLocaleString('id-ID')}   Rp ${subtotal.toLocaleString('id-ID')}\n`;
+        });
+
+        cetakText += "--------------------------------\n";
+        cetakText += `TOTAL    : Rp ${total.toLocaleString('id-ID')}\n`;
+        cetakText += `BAYAR    : Rp ${bayar.toLocaleString('id-ID')}\n`;
+        cetakText += `KEMBALI  : Rp ${kembalian.toLocaleString('id-ID')}\n`;
+        cetakText += "--------------------------------\n";
+        cetakText += CENTER + "*** TERIMA KASIH ***\n\n\n" + CUT;
+
+        const encoder = new TextEncoder();
+        const dataBytes = encoder.encode(cetakText);
+        
+        const CHUNK_SIZE = 512; 
+        for (let i = 0; i < dataBytes.length; i += CHUNK_SIZE) {
+          const chunk = dataBytes.slice(i, i + CHUNK_SIZE);
+          await bluetoothCharacteristic.writeValue(chunk);
+          await new Promise(resolve => setTimeout(resolve, 50)); 
+        }
+
+        showLoading(false);
+      } catch (error) {
+        showLoading(false);
+        console.error(error);
+        alert("⚠️ Gagal mencetak ke printer.");
+      }
+    }
+    
+    async function prosesBayar() {
+      if (keranjang.length === 0) {
+        alert("⚠️ Keranjang belanja masih kosong!");
+        return;
+      }
+
+      const total = keranjang.reduce((sum, item) => sum + (item.harga * item.qty), 0);
+      const bayar = parseFloat(document.getElementById('inputBayar').value) || 0;
+      const namaPembeli = document.getElementById('inputNamaPembeli').value.trim() || "Umum";
+      const kembalian = bayar - total;
+
+      if (bayar < total) {
+        alert("⚠️ Uang yang diterima kurang dari total transaksi!");
+        return;
+      }
+
+      const rincianItemsText = keranjang.map(i => `${i.nama} (${i.qty}x)`).join(", ");
+      const cartDataJson = JSON.stringify(keranjang.map(i => ({
+        id: i.id,
+        nama: i.nama,
+        qty: i.qty
+      })));
+
+      showLoading(true, "Menyimpan transaksi ke Spreadsheet...");
+
+      try {
+        const params = new URLSearchParams({
+          action: 'tambahTransaksi',
+          namaPembeli: namaPembeli,
+          items: rincianItemsText,
+          total: total,
+          bayar: bayar,
+          kembali: kembalian,
+          cartData: cartDataJson
+        });
+
+        const res = await fetch(`${API_URL}?${params.toString()}`, { 
+          method: 'GET', 
+          redirect: 'follow' 
+        });
+        const result = await res.json();
+
+        showLoading(false);
+        if (!result.success) {
+          alert("⚠️ Catatan: " + (result.message || "Gagal update stok"));
+        }
+      } catch (err) {
+        showLoading(false);
+        console.error(err);
+      }
+
+      await cetakLangsungThermal(namaPembeli, total, bayar, kembalian);
+
+      kosongkanKeranjang();
+      document.getElementById('inputNamaPembeli').value = '';
+      muatDataProdukFromSheets();
     }
   </script>
 </body>
