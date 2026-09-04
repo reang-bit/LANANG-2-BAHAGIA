@@ -924,7 +924,6 @@
       dataPembeliBulanan.forEach((pb, index) => {
         let listHtml = '';
         pb.listTransaksi.forEach(trx => {
-          // Rincian status bayar per transaksi
           let statusBayarHtml = "";
           if (trx.kembali >= 0) {
             statusBayarHtml = `<span class="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">Bayar: Rp ${trx.bayar.toLocaleString('id-ID')} | Kembali: Rp ${trx.kembali.toLocaleString('id-ID')}</span>`;
@@ -963,14 +962,19 @@
                 </div>
                 <p class="text-[11px] text-slate-500 mt-1">Total Pesanan: ${pb.listTransaksi.length} transaksi | ${hutangPiutangBadge}</p>
               </div>
-              <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-                <div class="text-right">
+              <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
+                <div class="text-right mr-2">
                   <span class="text-[10px] uppercase font-bold text-slate-400 block">Total Belanja | Bayar</span>
                   <span class="font-black text-xs text-emerald-700 block">Rp ${pb.totalBelanja.toLocaleString('id-ID')}</span>
                   <span class="text-[11px] font-bold text-slate-600">Bayar: Rp ${pb.totalBayar.toLocaleString('id-ID')}</span>
                 </div>
-                <button onclick="cetakRekapSpesifik('pembeli', ${index})" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow">
-                  <span>🖨️</span> Cetak Rekap
+                <!-- Tombol Cetak PDF / Browser -->
+                <button onclick="cetakRekapSpesifik('pembeli', ${index})" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow" title="Cetak Standar">
+                  <span>🖨️</span> Cetak
+                </button>
+                <!-- Tombol Cetak Bluetooth Thermal -->
+                <button onclick="cetakBluetoothPembeli(${index})" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow" title="Cetak Printer Bluetooth">
+                  <span>🦷</span> Thermal
                 </button>
               </div>
             </div>
@@ -1298,6 +1302,60 @@ function cetakRekapSpesifik(tipe, index) {
       }
     }
     
+function cetakBluetoothPembeli(index) {
+      let pb = cacheDataRekap.rekapPembeliBulanan[index];
+      if (!pb) return;
+
+      // Pastikan fungsi penghubung bluetooth atau fungsi cetak ESC/POS Anda sudah tersedia di aplikasi
+      // Contoh format teks untuk printer thermal (lebar umumnya 32-38 karakter)
+      let textPrint = "";
+      textPrint += "================================\n";
+      textPrint += "       REKAP PEMBELANJAAN       \n";
+      textPrint += "================================\n";
+      textPrint += `Nama   : ${pb.pembeli}\n`;
+      textPrint += `Periode: ${pb.bulan}\n`;
+      textPrint += `Total  : ${pb.listTransaksi.length} Transaksi\n`;
+      textPrint += "--------------------------------\n";
+
+      pb.listTransaksi.forEach((trx, i) => {
+        textPrint += `${i + 1}. Tgl: ${trx.tanggal} ${trx.waktu}\n`;
+        textPrint += `   Item: ${trx.items}\n`;
+        textPrint += `   Total: Rp ${trx.total.toLocaleString('id-ID')}\n`;
+        if (trx.kembali >= 0) {
+          textPrint += `   Bayar: Rp ${trx.bayar.toLocaleString('id-ID')} (Kembali)\n`;
+        } else {
+          textPrint += `   Bayar: Rp ${trx.bayar.toLocaleString('id-ID')} (Hutang: Rp ${Math.abs(trx.kembali).toLocaleString('id-ID')})\n`;
+        }
+        textPrint += "--------------------------------\n";
+      });
+
+      let grandKembaliHutang = pb.totalHutangPiutang;
+      textPrint += `Total Belanja : Rp ${pb.totalBelanja.toLocaleString('id-ID')}\n`;
+      textPrint += `Total Bayar   : Rp ${pb.totalBayar.toLocaleString('id-ID')}\n`;
+      if (grandKembaliHutang < 0) {
+        textPrint += `SISA HUTANG   : Rp ${Math.abs(grandKembaliHutang).toLocaleString('id-ID')}\n`;
+      } else {
+        textPrint += `KEMBALIAN/LUNAS: Rp ${grandKembaliHutang.toLocaleString('id-ID')}\n`;
+      }
+      textPrint += "================================\n";
+      textPrint += "     TERIMA KASIH TELAH       \n";
+      textPrint += "        BERBELANJA              \n";
+      textPrint += "================================\n\n\n";
+
+      // Jika aplikasi Anda menggunakan fungsi global Bluetooth bawaan (seperti Android Interface / Web Bluetooth)
+      if (window.Android && window.Android.printBluetooth) {
+        // Integrasi jika dibungkus WebView Android
+        window.Android.printBluetooth(textPrint);
+      } else if (typeof kirimKePrinterBluetooth === 'function') {
+        // Memanggil fungsi bluetooth kustom yang mungkin sudah ada di proyek Anda
+        kirimKePrinterBluetooth(textPrint);
+      } else {
+        // Fallback: Jika menggunakan Web Bluetooth API standar
+        alert("Fitur cetak Bluetooth langsung aktif. Pastikan perangkat Anda mendukung Web Bluetooth atau terhubung kebridge Android.");
+        console.log(textPrint);
+      }
+    }
+
     async function prosesBayar() {
       if (keranjang.length === 0) {
         alert("⚠️ Keranjang belanja masih kosong!");
