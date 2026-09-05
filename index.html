@@ -1251,7 +1251,18 @@
       }
       
       cetakText += "--------------------------------\n";
-      cetakText += CENTER + "*** TERIMA KASIH ***\n\n\n" + CUT;
+      cetakText += CENTER + "*** TERIMA KASIH ***\n\n";
+      const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
+        const storeLength = qrUrl.length + 3;
+        const pL = String.fromCharCode(storeLength % 256);
+        const pH = String.fromCharCode(Math.floor(storeLength / 256));
+
+        cetakText += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+        cetakText += GS + '(k' + '\x03\x00\x31\x43\x05';
+        cetakText += GS + '(k' + '\x03\x00\x31\x45\x30';
+        cetakText += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+        cetakText += GS + '(k' + '\x03\x00\x31\x51\x30';
+        cetakText += "\n\n\n" + CUT;
 
       await kirimDataRawKePrinter(cetakText);
     }
@@ -1274,6 +1285,8 @@
 
       let textPrint = INIT;
       textPrint += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
+       cetakText += "Jl. Raya Jagapura Lor - Nyibanda\n";
+      cetakText += "Solusi Kebutuhan Anda\n";
       textPrint += "REKAPITULASI TRANSAKSI HARIAN\n";
       textPrint += "--------------------------------\n";
       textPrint += LEFT;
@@ -1296,7 +1309,18 @@
       textPrint += CENTER + BOLD_ON;
       textPrint += `OMSET HARIAN: Rp ${h.totalOmset.toLocaleString('id-ID')}\n`;
       textPrint += BOLD_OFF + "--------------------------------\n";
-      textPrint += "      *** LAPORAN SELESAI ***\n\n\n" + CUT;
+      textPrint += "      *** LAPORAN SELESAI ***\n\n";
+      const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
+        const storeLength = qrUrl.length + 3;
+        const pL = String.fromCharCode(storeLength % 256);
+        const pH = String.fromCharCode(Math.floor(storeLength / 256));
+
+        cetakText += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+        cetakText += GS + '(k' + '\x03\x00\x31\x43\x05';
+        cetakText += GS + '(k' + '\x03\x00\x31\x45\x30';
+        cetakText += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+        cetakText += GS + '(k' + '\x03\x00\x31\x51\x30';
+        cetakText += "\n\n\n" + CUT;
 
       await kirimDataRawKePrinter(textPrint);
     }
@@ -1319,6 +1343,8 @@
 
       let textPrint = INIT;
       textPrint += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
+       cetakText += "Jl. Raya Jagapura Lor - Nyibanda\n";
+      cetakText += "Solusi Kebutuhan Anda\n";
       textPrint += "REKAPITULASI OMSET BULANAN\n";
       textPrint += "--------------------------------\n";
       textPrint += LEFT;
@@ -1336,7 +1362,18 @@
       textPrint += CENTER + BOLD_ON;
       textPrint += `OMSET BULANAN: Rp ${b.totalOmset.toLocaleString('id-ID')}\n`;
       textPrint += BOLD_OFF + "--------------------------------\n";
-      textPrint += "      *** LAPORAN SELESAI ***\n\n\n" + CUT;
+      textPrint += "      *** LAPORAN SELESAI ***\n\n";
+      const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
+        const storeLength = qrUrl.length + 3;
+        const pL = String.fromCharCode(storeLength % 256);
+        const pH = String.fromCharCode(Math.floor(storeLength / 256));
+
+        cetakText += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+        cetakText += GS + '(k' + '\x03\x00\x31\x43\x05';
+        cetakText += GS + '(k' + '\x03\x00\x31\x45\x30';
+        cetakText += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+        cetakText += GS + '(k' + '\x03\x00\x31\x51\x30';
+        cetakText += "\n\n\n" + CUT;
 
       await kirimDataRawKePrinter(textPrint);
     }
@@ -1359,6 +1396,8 @@
 
       let textPrint = INIT;
       textPrint += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
+       cetakText += "Jl. Raya Jagapura Lor - Nyibanda\n";
+      cetakText += "Solusi Kebutuhan Anda\n";
       textPrint += "REKAP BELANJA PELANGGAN\n";
       textPrint += "--------------------------------\n";
       textPrint += LEFT;
@@ -1388,7 +1427,18 @@
         textPrint += `KEMBALIAN     : Rp ${grandKembaliHutang.toLocaleString('id-ID')}\n`;
       }
       textPrint += "--------------------------------\n";
-      textPrint += CENTER + "*** TERIMA KASIH ***\n\n\n" + CUT;
+      textPrint += CENTER + "*** TERIMA KASIH ***\n\n";
+      const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
+        const storeLength = qrUrl.length + 3;
+        const pL = String.fromCharCode(storeLength % 256);
+        const pH = String.fromCharCode(Math.floor(storeLength / 256));
+
+        cetakText += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+        cetakText += GS + '(k' + '\x03\x00\x31\x43\x05';
+        cetakText += GS + '(k' + '\x03\x00\x31\x45\x30';
+        cetakText += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+        cetakText += GS + '(k' + '\x03\x00\x31\x51\x30';
+        cetakText += "\n\n\n" + CUT;
 
       await kirimDataRawKePrinter(textPrint);
     }
