@@ -1285,8 +1285,8 @@
 
       let textPrint = INIT;
       textPrint += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
-       cetakText += "Jl. Raya Jagapura Lor - Nyibanda\n";
-      cetakText += "Solusi Kebutuhan Anda\n";
+      textPrint += "Jl. Raya Jagapura Lor - Nyibanda\n";
+      textPrint += "Solusi Kebutuhan Anda\n";
       textPrint += "REKAPITULASI TRANSAKSI HARIAN\n";
       textPrint += "--------------------------------\n";
       textPrint += LEFT;
@@ -1310,17 +1310,18 @@
       textPrint += `OMSET HARIAN: Rp ${h.totalOmset.toLocaleString('id-ID')}\n`;
       textPrint += BOLD_OFF + "--------------------------------\n";
       textPrint += "      *** LAPORAN SELESAI ***\n\n";
+      textPrint += "Kunjungi Situs Kami";
       const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
         const storeLength = qrUrl.length + 3;
         const pL = String.fromCharCode(storeLength % 256);
         const pH = String.fromCharCode(Math.floor(storeLength / 256));
 
-        cetakText += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
-        cetakText += GS + '(k' + '\x03\x00\x31\x43\x05';
-        cetakText += GS + '(k' + '\x03\x00\x31\x45\x30';
-        cetakText += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
-        cetakText += GS + '(k' + '\x03\x00\x31\x51\x30';
-        cetakText += "\n\n\n" + CUT;
+        textPrint += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+        textPrint += GS + '(k' + '\x03\x00\x31\x43\x05';
+        textPrint += GS + '(k' + '\x03\x00\x31\x45\x30';
+        textPrint += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+        textPrint += GS + '(k' + '\x03\x00\x31\x51\x30';
+        textPrint += "\n\n\n" + CUT;
 
       await kirimDataRawKePrinter(textPrint);
     }
@@ -1363,17 +1364,19 @@
       textPrint += `OMSET BULANAN: Rp ${b.totalOmset.toLocaleString('id-ID')}\n`;
       textPrint += BOLD_OFF + "--------------------------------\n";
       textPrint += "      *** LAPORAN SELESAI ***\n\n";
+      textPrint += "Kunjungi Situs Kami";
       const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
         const storeLength = qrUrl.length + 3;
         const pL = String.fromCharCode(storeLength % 256);
         const pH = String.fromCharCode(Math.floor(storeLength / 256));
 
-        cetakText += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
-        cetakText += GS + '(k' + '\x03\x00\x31\x43\x05';
-        cetakText += GS + '(k' + '\x03\x00\x31\x45\x30';
-        cetakText += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
-        cetakText += GS + '(k' + '\x03\x00\x31\x51\x30';
-        cetakText += "\n\n\n" + CUT;
+        textPrint += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+        textPrint += GS + '(k' + '\x03\x00\x31\x43\x05';
+        textPrint += GS + '(k' + '\x03\x00\x31\x45\x30';
+        textPrint += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+        textPrint += GS + '(k' + '\x03\x00\x31\x51\x30';
+        textPrint += "\n\n\n" + CUT;
+
 
       await kirimDataRawKePrinter(textPrint);
     }
@@ -1428,17 +1431,18 @@
       }
       textPrint += "--------------------------------\n";
       textPrint += CENTER + "*** TERIMA KASIH ***\n\n";
+      textPrint += "Kunjungi Situs Kami";
       const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
         const storeLength = qrUrl.length + 3;
         const pL = String.fromCharCode(storeLength % 256);
         const pH = String.fromCharCode(Math.floor(storeLength / 256));
 
-        cetakText += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
-        cetakText += GS + '(k' + '\x03\x00\x31\x43\x05';
-        cetakText += GS + '(k' + '\x03\x00\x31\x45\x30';
-        cetakText += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
-        cetakText += GS + '(k' + '\x03\x00\x31\x51\x30';
-        cetakText += "\n\n\n" + CUT;
+        textPrint += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+        textPrint += GS + '(k' + '\x03\x00\x31\x43\x05';
+        textPrint += GS + '(k' + '\x03\x00\x31\x45\x30';
+        textPrint += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+        textPrint += GS + '(k' + '\x03\x00\x31\x51\x30';
+        textPrint += "\n\n\n" + CUT;
 
       await kirimDataRawKePrinter(textPrint);
     }
