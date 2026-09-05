@@ -422,7 +422,7 @@
     let isKasirUnlocked = false;
 
     let cacheDataRekap = { harian: [], bulanan: [], rekapPembeliBulanan: [] };
-    let isDataRekapLoaded = false; // Flag penanda data rekap sudah lengkap/utuh
+    let isDataRekapLoaded = false;
 
     window.onload = function() {
       muatDataProdukFromSheets();
@@ -460,7 +460,6 @@
         tabRekap.classList.remove('hidden');
         btnRekap.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-white text-emerald-800 shadow-sm border border-slate-200/60 whitespace-nowrap";
         
-        // Cek apakah data rekap sudah lengkap, jika belum lakukan pengambilan data otomatis
         if (!isDataRekapLoaded) {
           muatDataRekap();
         }
@@ -476,7 +475,6 @@
       const kontenBulanan = document.getElementById('kontenRekapBulanan');
       const kontenPembeli = document.getElementById('kontenRekapPembeli');
 
-      // Reset style tombol
       btnHarian.className = "flex-1 py-2 text-xs font-bold transition text-slate-600";
       btnBulanan.className = "flex-1 py-2 text-xs font-bold transition text-slate-600";
       btnPembeli.className = "flex-1 py-2 text-xs font-bold transition text-slate-600";
@@ -548,7 +546,6 @@
         })
         .catch(err => {
           showLoading(false);
-          console.warn("Gagal terhubung ke Apps Script, menggunakan data default.", err);
           gantiDenganDataDefault();
         });
     }
@@ -782,7 +779,6 @@
       updateKeranjangUI();
     }
 
-    // FUNGSI UTAMA: MENGAMBIL DAN MEMASTIKAN DATA REKAP LENGKAP UTUH
     function muatDataRekap() {
       showLoading(true, "Merekap data transaksi secara lengkap...");
       isDataRekapLoaded = false;
@@ -792,13 +788,12 @@
         .then(res => {
           showLoading(false);
           if (res.success) {
-            // Validasi kelengkapan struktur data rekap dari server
             cacheDataRekap = {
               harian: Array.isArray(res.harian) ? res.harian : [],
               bulanan: Array.isArray(res.bulanan) ? res.bulanan : [],
               rekapPembeliBulanan: Array.isArray(res.rekapPembeliBulanan) ? res.rekapPembeliBulanan : []
             };
-            isDataRekapLoaded = true; // Tandai bahwa data rekap sudah lengkap & utuh
+            isDataRekapLoaded = true;
 
             renderRekapHarian(cacheDataRekap.harian);
             renderRekapBulanan(cacheDataRekap.bulanan);
@@ -809,12 +804,10 @@
         })
         .catch(err => {
           showLoading(false);
-          console.error(err);
           alert("⚠️ Terjadi kesalahan jaringan saat merekap data.");
         });
     }
 
-    // Pengecekan sebelum cetak untuk memastikan data rekap telah lengkap dan siap
     function pastikanDataRekapSiap(callback) {
       if (!isDataRekapLoaded || !cacheDataRekap) {
         showLoading(true, "Memuat ulang data rekap agar lengkap...");
@@ -891,11 +884,9 @@
                   <span class="text-[10px] uppercase font-bold text-slate-400 block">Omset Harian</span>
                   <span class="font-black text-sm text-emerald-700">Rp ${h.totalOmset.toLocaleString('id-ID')}</span>
                 </div>
-                <!-- Tombol Cetak PDF / Browser dengan proteksi tunggu data utuh -->
                 <button onclick="pastikanDataRekapSiap(() => cetakRekapSpesifik('harian', ${index}))" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow" title="Cetak Standar">
                   <span>🖨️</span> Cetak
                 </button>
-                <!-- Tombol Cetak Bluetooth Thermal dengan proteksi tunggu data utuh -->
                 <button onclick="pastikanDataRekapSiap(() => cetakBluetoothHarian(${index}))" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow" title="Cetak Printer Bluetooth">
                   <span>🦷</span> Thermal
                 </button>
@@ -949,11 +940,9 @@
                   <span class="text-[10px] uppercase font-bold text-slate-400 block">Omset Bulanan</span>
                   <span class="font-black text-sm text-emerald-700">Rp ${b.totalOmset.toLocaleString('id-ID')}</span>
                 </div>
-                <!-- Tombol Cetak PDF / Browser dengan proteksi tunggu data utuh -->
                 <button onclick="pastikanDataRekapSiap(() => cetakRekapSpesifik('bulanan', ${index}))" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow" title="Cetak Standar">
                   <span>🖨️</span> Cetak
                 </button>
-                <!-- Tombol Cetak Bluetooth Thermal dengan proteksi tunggu data utuh -->
                 <button onclick="pastikanDataRekapSiap(() => cetakBluetoothBulanan(${index}))" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow" title="Cetak Printer Bluetooth">
                   <span>🦷</span> Thermal
                 </button>
@@ -1023,11 +1012,9 @@
                   <span class="font-black text-xs text-emerald-700 block">Rp ${pb.totalBelanja.toLocaleString('id-ID')}</span>
                   <span class="text-[11px] font-bold text-slate-600">Bayar: Rp ${pb.totalBayar.toLocaleString('id-ID')}</span>
                 </div>
-                <!-- Tombol Cetak PDF / Browser dengan proteksi tunggu data utuh -->
                 <button onclick="pastikanDataRekapSiap(() => cetakRekapSpesifik('pembeli', ${index}))" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow" title="Cetak Standar">
                   <span>🖨️</span> Cetak
                 </button>
-                <!-- Tombol Cetak Bluetooth Thermal dengan proteksi tunggu data utuh -->
                 <button onclick="pastikanDataRekapSiap(() => cetakBluetoothPembeli(${index}))" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow" title="Cetak Printer Bluetooth">
                   <span>🦷</span> Thermal
                 </button>
@@ -1195,11 +1182,11 @@
         alert("✅ Printer Bluetooth Berhasil Terhubung!");
       } catch (error) {
         showLoading(false);
-        console.error(error);
         alert("⚠️ Gagal terhubung ke printer.");
       }
     }
 
+    // FUNGSI UTAMA PENGECEKAN BUFFER: Kirim paket data kecil-kecil (Chunk) dengan jeda waktu aman untuk HP
     async function kirimDataRawKePrinter(cetakText) {
       if (!bluetoothCharacteristic) {
         await konekPrinterBluetooth();
@@ -1207,21 +1194,23 @@
       }
 
       try {
-        showLoading(true, "Mencetak via Thermal...");
+        showLoading(true, "Mengirim data ke Thermal...");
         const encoder = new TextEncoder();
         const dataBytes = encoder.encode(cetakText);
         
-        const CHUNK_SIZE = 512; 
+        // Ukuran paket diperkecil jadi 64 bytes agar buffer printer Bluetooth HP tidak penuh/crash
+        const CHUNK_SIZE = 64; 
         for (let i = 0; i < dataBytes.length; i += CHUNK_SIZE) {
           const chunk = dataBytes.slice(i, i + CHUNK_SIZE);
           await bluetoothCharacteristic.writeValue(chunk);
-          await new Promise(resolve => setTimeout(resolve, 50)); 
+          // Beri jeda 80ms agar printer thermal portabel sempat mencetak baris sebelumnya
+          await new Promise(resolve => setTimeout(resolve, 80)); 
         }
         showLoading(false);
       } catch (error) {
         showLoading(false);
-        console.error(error);
-        alert("⚠️ Gagal mengirim data ke printer thermal.");
+        alert("⚠️ Gagal mengirim data. Pastikan printer menyala & terhubung kembali.");
+        bluetoothCharacteristic = null; // Reset koneksi jika gagal
       }
     }
 
@@ -1262,20 +1251,7 @@
       }
       
       cetakText += "--------------------------------\n";
-      cetakText += CENTER + "*** TERIMA KASIH ***\n\n";
-      cetakText += "Kunjungi situs kami:\n\n";
-  
-      const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
-      const storeLength = qrUrl.length + 3;
-      const pL = String.fromCharCode(storeLength % 256);
-      const pH = String.fromCharCode(Math.floor(storeLength / 256));
-
-      cetakText += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
-      cetakText += GS + '(k' + '\x03\x00\x31\x43\x05';
-      cetakText += GS + '(k' + '\x03\x00\x31\x45\x30';
-      cetakText += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
-      cetakText += GS + '(k' + '\x03\x00\x31\x51\x30';
-      cetakText += "\n\n\n" + CUT;
+      cetakText += CENTER + "*** TERIMA KASIH ***\n\n\n" + CUT;
 
       await kirimDataRawKePrinter(cetakText);
     }
@@ -1322,11 +1298,7 @@
       textPrint += BOLD_OFF + "--------------------------------\n";
       textPrint += "      *** LAPORAN SELESAI ***\n\n\n" + CUT;
 
-      if (window.Android && window.Android.printBluetooth) {
-        window.Android.printBluetooth(textPrint);
-      } else {
-        await kirimDataRawKePrinter(textPrint);
-      }
+      await kirimDataRawKePrinter(textPrint);
     }
 
     async function cetakBluetoothBulanan(index) {
@@ -1366,11 +1338,7 @@
       textPrint += BOLD_OFF + "--------------------------------\n";
       textPrint += "      *** LAPORAN SELESAI ***\n\n\n" + CUT;
 
-      if (window.Android && window.Android.printBluetooth) {
-        window.Android.printBluetooth(textPrint);
-      } else {
-        await kirimDataRawKePrinter(textPrint);
-      }
+      await kirimDataRawKePrinter(textPrint);
     }
 
     async function cetakBluetoothPembeli(index) {
@@ -1422,11 +1390,7 @@
       textPrint += "--------------------------------\n";
       textPrint += CENTER + "*** TERIMA KASIH ***\n\n\n" + CUT;
 
-      if (window.Android && window.Android.printBluetooth) {
-        window.Android.printBluetooth(textPrint);
-      } else {
-        await kirimDataRawKePrinter(textPrint);
-      }
+      await kirimDataRawKePrinter(textPrint);
     }
 
     async function prosesBayar() {
@@ -1472,7 +1436,6 @@
         }
       } catch (err) {
         showLoading(false);
-        console.error(err);
       }
 
       await cetakLangsungThermal(namaPembeli, total, bayar, selisih);
@@ -1480,8 +1443,6 @@
       kosongkanKeranjang();
       document.getElementById('inputNamaPembeli').value = '';
       muatDataProdukFromSheets();
-      
-      // Reset cache rekap agar data terbaru termuat ulang secara utuh saat dibuka kembali
       isDataRekapLoaded = false;
     }
   </script>
