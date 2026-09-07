@@ -1969,7 +1969,7 @@ function getNamaPembeliAktif() {
 
       const total = keranjang.reduce((sum, item) => sum + (item.harga * item.qty), 0);
       const bayar = parseFloat(document.getElementById('inputBayar').value) || 0;
-      const namaPembeli = document.getElementById('inputNamaPembeli').value.trim() || "Umum";
+      const namaPembeli = getNamaPembeliAktif();
       const pelayan = document.getElementById('selectPelayan').value;
       const catatanKosongan = document.getElementById('selectCatatanKosongan').value;
       const selisih = bayar - total;
