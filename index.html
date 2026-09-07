@@ -343,10 +343,15 @@
           <!-- Input Nama Pembeli, Pelayan & Catatan Spinner -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1.5">Nama Pembeli</label>
-              <input type="text" id="inputNamaPembeli" placeholder="Bpk. Budi (Opsional)" 
-                     class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none">
-            </div>
+  <label class="block text-xs font-semibold text-slate-600 mb-1.5">Nama Pembeli</label>
+  <select id="selectNamaPembeli" onchange="cekPilihanPembeli(this)" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none">
+    <option value="Umum">Umum</option>
+    <option value="BARU">+ Tambah Nama Baru...</option>
+  </select>
+  <!-- Input teks tersembunyi untuk mengetik nama baru jika belum ada di list -->
+  <input type="text" id="inputNamaPembeliBaru" placeholder="Ketik nama pembeli baru..." style="display:none;" 
+         class="w-full mt-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none">
+</div>
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1.5">Pelayan / Kasir</label>
               <select id="selectPelayan" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none">
@@ -1913,6 +1918,48 @@
 
       await kirimDataRawKePrinter(textPrint);
     }
+
+    // Fungsi untuk memuat daftar pelanggan ke dalam spinner
+function muatDataPelanggan() {
+  fetch(`${API_URL}?action=getPelanggan`, { method: "GET", redirect: "follow" })
+    .then(res => res.json())
+    .then(res => {
+      if (res.success && res.data) {
+        const select = document.getElementById('selectNamaPembeli');
+        // Pertahankan opsi default
+        select.innerHTML = '<option value="Umum">Umum</option>';
+        
+        res.data.forEach(nama => {
+          select.innerHTML += `<option value="${nama}">${nama}</option>`;
+        });
+        
+        select.innerHTML += '<option value="BARU">+ Tambah Nama Baru...</option>';
+      }
+    })
+    .catch(err => console.error("Gagal memuat pelanggan", err));
+}
+
+// Fungsi untuk mendeteksi pilihan "Tambah Nama Baru" pada spinner
+function cekPilihanPembeli(selectEl) {
+  const inputBaru = document.getElementById('inputNamaPembeliBaru');
+  if (selectEl.value === "BARU") {
+    inputBaru.style.display = "block";
+    inputBaru.value = "";
+    inputBaru.focus();
+  } else {
+    inputBaru.style.display = "none";
+    inputBaru.value = "";
+  }
+}
+
+// Helper untuk mengambil nilai nama pembeli yang valid saat transaksi disimpan
+function getNamaPembeliAktif() {
+  const selectEl = document.getElementById('selectNamaPembeli');
+  if (selectEl.value === "BARU") {
+    return document.getElementById('inputNamaPembeliBaru').value.trim() || "Umum";
+  }
+  return selectEl.value || "Umum";
+}
     
     async function prosesBayar() {
       if (keranjang.length === 0) {
