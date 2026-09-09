@@ -1693,7 +1693,7 @@
       await kirimDataRawKePrinter(cetakText);
     }
 
-   function cetakRekapSpesifik(tipe, index) {
+  function cetakRekapSpesifik(tipe, index) {
       let dataObj = null;
       let judul = "";
 
@@ -1707,7 +1707,7 @@
           let mapPembeli = {};
           transaksiData.forEach(trx => {
             let namaPembeli = (trx.pembeli || 'Umum').trim();
-            let bulanTrx = trx.tanggal ? trx.tanggal.substring(0, 7) : 'Semua'; // Format YYYY-MM
+            let bulanTrx = trx.tanggal ? trx.tanggal.substring(0, 7) : 'Semua';
             let kunci = `${namaPembeli}_${bulanTrx}`;
 
             if (!mapPembeli[kunci]) {
@@ -1736,7 +1736,7 @@
         if (mainArray && mainArray.length > 0) {
           dataObj = mainArray[0];
         } else {
-          alert("⚠️ Data transaksi kosong. Mohon pastikan data transaksi sudah dimuat di aplikasi.");
+          alert("⚠️ Data rekap belum lengkap atau tidak ditemukan. Silakan klik tombol 'Refresh Rekap' terlebih dahulu.");
           return;
         }
       }
@@ -1827,7 +1827,7 @@
               </td>
               <td colspan="2" style="padding: 10px; text-align: right; font-size: 12px;">
                 TOTAL BELANJA:<br>
-                <span style="color: #047857; font-size: 13px;">Rp ${totalTrx.toLocaleString('id-ID')}</span>
+                <span style="color: #047857; font-size: 13px;">Rp ${grandTotal.toLocaleString('id-ID')}</span>
               </td>
             </tr>
           </tfoot>
