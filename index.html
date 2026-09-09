@@ -754,7 +754,10 @@
     }
 
     function cetakBiasaDetailKosongan() {
-      if (!selectedPelangganKosonganData) return;
+      if (!selectedPelangganKosonganData) {
+        alert("⚠️ Silakan pilih pelanggan kosongan terlebih dahulu!");
+        return;
+      }
 
       document.getElementById('printJudulLaporan').innerText = `DAFTAR KOSONGAN BELUM LUNAS - ${selectedPelangganKosonganData.pembeli.toUpperCase()}`;
       document.getElementById('printInfoWaktu').innerText = `Nama Pelanggan: ${selectedPelangganKosonganData.pembeli} | Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`;
@@ -803,7 +806,10 @@
     }
 
     async function cetakThermalDetailKosongan() {
-      if (!selectedPelangganKosonganData) return;
+      if (!selectedPelangganKosonganData) {
+        alert("⚠️ Silakan pilih pelanggan kosongan terlebih dahulu!");
+        return;
+      }
 
       const ESC = '\x1B';
       const GS = '\x1D';
@@ -836,8 +842,10 @@
       textPrint += BOLD_ON;
       textPrint += `TOTAL KESELURUHAN: Rp ${grandTotal.toLocaleString('id-ID')}\n`;
       textPrint += BOLD_OFF + "--------------------------------\n";
-      textPrint += CENTER + "*** MOHON SEGERA DIKEMBALIKAN ***\n\n";
+      textPrint += CENTER + "** MOHON SEGERA DIKEMBALIKAN **\n\n";
 
+      textPrint += CENTER + "Kunjungi Situs Kami";
+      textPrint += CENTER + "Scann QR Kode Dibawah ini";
       const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
       const storeLength = qrUrl.length + 3;
       const pL = String.fromCharCode(storeLength % 256);
@@ -1659,7 +1667,9 @@
 
       cetakText += "--------------------------------\n";
       cetakText += CENTER + "*** TERIMA KASIH ***\n\n";
-      
+
+      cetakText += CENTER + "Kunjungi Situs Kami";
+      cetakText += CENTER + "Scann QR Kode Dibawah ini";
       const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
       const storeLength = qrUrl.length + 3;
       const pL = String.fromCharCode(storeLength % 256);
@@ -1903,6 +1913,9 @@
       cetakText += "--------------------------------\n";
       cetakText += CENTER + "*** TERIMA KASIH ***\n\n";
 
+      cetakText += CENTER + "Kunjungi Situs Kami";
+      cetakText += CENTER + "Scann QR Kode Dibawah ini";
+      cetakText += "Kunjungi situs kami";
       const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
       const storeLength = qrUrl.length + 3;
       const pL = String.fromCharCode(storeLength % 256);
@@ -1971,6 +1984,8 @@ async function cetakThermalRekapUmum(judulLaporan, infoPeriode, listTransaksi) {
   cetakText += BOLD_OFF + "--------------------------------\n";
   cetakText += CENTER + "*** LAPORAN REKAP TRANSAKSI ***\n\n";
 
+  cetakText += CENTER + "Kunjungi Situs Kami";
+  cetakText += CENTER + "Scann QR Kode Dibawah ini";
   const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
   const storeLength = qrUrl.length + 3;
   const pL = String.fromCharCode(storeLength % 256);
