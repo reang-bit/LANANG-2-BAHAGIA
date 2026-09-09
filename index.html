@@ -844,8 +844,8 @@
       textPrint += BOLD_OFF + "--------------------------------\n";
       textPrint += CENTER + "** MOHON SEGERA DIKEMBALIKAN **\n\n";
 
-      cetakText += CENTER + "Kunjungi Situs Kami\n";
-      cetakText += CENTER + "Scann QR Kode Dibawah ini\n\n";
+      textPrint += CENTER + "Kunjungi Situs Kami\n";
+      textPrint += CENTER + "Scann QR Kode Dibawah ini\n\n";
       const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
       const storeLength = qrUrl.length + 3;
       const pL = String.fromCharCode(storeLength % 256);
@@ -856,11 +856,11 @@
       textPrint += GS + '(k' + '\x03\x00\x31\x45\x30';
       textPrint += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
       textPrint += GS + '(k' + '\x03\x00\x31\x51\x30';
-      textPrint += "\n\n" + CUT;
+      textPrint += "\n" + CUT;
 
       await kirimDataRawKePrinter(textPrint);
     }
-
+    
     function cekPilihanPembeli(selectEl) {
       const inputBaru = document.getElementById('inputNamaPembeliBaru');
       if (selectEl.value === "BARU") {
@@ -1740,11 +1740,11 @@
           `;
         });
 
-        let infoHutangDetailHtml = "";
+        let infoKeseluruhanHtml = "";
         if (grandKembaliHutang < 0) {
-          infoHutangDetailHtml = `<span style="color: #e11d48; font-size: 12px; font-weight: bold;">TOTAL SISA HUTANG: Rp ${Math.abs(grandKembaliHutang).toLocaleString('id-ID')}</span>`;
+          infoKeseluruhanHtml = `<span style="color: #e11d48;">Total Sisa Hutang: Rp ${Math.abs(grandKembaliHutang).toLocaleString('id-ID')}</span>`;
         } else {
-          infoHutangDetailHtml = `<span style="color: #047857; font-size: 12px; font-weight: bold;">STATUS: LUNAS / LEBIH (Rp ${grandKembaliHutang.toLocaleString('id-ID')})</span>`;
+          infoKeseluruhanHtml = `<span style="color: #047857;">Total Kembalian/Lebih: Rp ${grandKembaliHutang.toLocaleString('id-ID')}</span>`;
         }
 
         const tabelHtml = `
@@ -1763,15 +1763,10 @@
             </tbody>
             <tfoot>
               <tr style="background-color: #f8fafc; border-top: 2px solid #0f172a; font-weight: bold; font-size: 11px;">
-                <td colspan="3" style="padding: 10px; text-align: left;">
-                  RINGKASAN KEUANGAN PELANGGAN:<br>
-                  <span style="font-weight: normal; color: #475569;">Total Belanja Keseluruhan : Rp ${grandTotal.toLocaleString('id-ID')}</span><br>
-                  <span style="font-weight: normal; color: #475569;">Total Bayar Keseluruhan   : Rp ${grandBayar.toLocaleString('id-ID')}</span><br>
-                  <div style="margin-top: 4px;">${infoHutangDetailHtml}</div>
-                </td>
-                <td colspan="2" style="padding: 10px; text-align: right; font-size: 11px; vertical-align: top;">
-                  STATUS AKHIR:<br>
-                  ${grandKembaliHutang < 0 ? '<span style="color: #e11d48; font-size: 13px;">BELUM LUNAS</span>' : '<span style="color: #047857; font-size: 13px;">LUNAS</span>'}
+                <td colspan="3" style="padding: 10px; text-align: right;">RINGKASAN PEMBAYARAN :<br><span style="font-size: 10px; font-weight: normal; color: #475569;">Total Bayar Keseluruhan: Rp ${grandBayar.toLocaleString('id-ID')}</span><br>${infoKeseluruhanHtml}</td>
+                <td colspan="2" style="padding: 10px; text-align: right; font-size: 12px;">
+                  TOTAL BELANJA:<br>
+                  <span style="color: #047857; font-size: 14px;">Rp ${grandTotal.toLocaleString('id-ID')}</span>
                 </td>
               </tr>
             </tfoot>
@@ -1783,62 +1778,35 @@
       } else {
         dataObj.listTransaksi.forEach((trx, i) => {
           grandTotal += Number(trx.total);
-          grandBayar += Number(trx.bayar || 0);
-          let statusKembaliHutang = Number(trx.kembali || (trx.bayar - trx.total));
-          grandKembaliHutang += statusKembaliHutang;
-
-          let statusBayarCetak = "";
-          if (statusKembaliHutang >= 0) {
-            statusBayarCetak = `Bayar: Rp ${Number(trx.bayar || 0).toLocaleString('id-ID')}<br><span style="color: #047857; font-weight: bold;">Lunas / Kembali: Rp ${statusKembaliHutang.toLocaleString('id-ID')}</span>`;
-          } else {
-            statusBayarCetak = `Bayar: Rp ${Number(trx.bayar || 0).toLocaleString('id-ID')}<br><span style="color: #e11d48; font-weight: bold;">Hutang: Rp ${Math.abs(statusKembaliHutang).toLocaleString('id-ID')}</span>`;
-          }
-
           rowsHtml += `
             <tr style="border-bottom: 1px solid #cbd5e1;">
               <td style="padding: 8px; text-align: center; font-size: 11px;">${i + 1}</td>
               <td style="padding: 8px; font-size: 11px;">${trx.tanggal || '-'} ${trx.waktu ? '(' + trx.waktu + ')' : ''}</td>
               <td style="padding: 8px; font-size: 11px; font-weight: bold;">${trx.pembeli}</td>
               <td style="padding: 8px; font-size: 11px;">${trx.items}</td>
-              <td style="padding: 8px; text-align: right; font-size: 11px;">${statusBayarCetak}</td>
               <td style="padding: 8px; text-align: right; font-size: 11px; font-weight: bold;">Rp ${Number(trx.total).toLocaleString('id-ID')}</td>
             </tr>
           `;
         });
 
-        let infoRingkasanHutang = "";
-        if (grandKembaliHutang < 0) {
-          infoRingkasanHutang = `<span style="color: #e11d48;">Total Sisa Hutang Periode Ini: Rp ${Math.abs(grandKembaliHutang).toLocaleString('id-ID')}</span>`;
-        } else {
-          infoRingkasanHutang = `<span style="color: #047857;">Status: Seluruh transaksi terpantau aman/lunas/lebih</span>`;
-        }
-
         const tabelHtml = `
           <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
             <thead>
               <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; text-transform: uppercase; font-size: 11px;">
-                <th style="padding: 8px; text-align: center; width: 35px;">No</th>
-                <th style="padding: 8px; text-align: left; width: 120px;">Waktu</th>
-                <th style="padding: 8px; text-align: left; width: 110px;">Pembeli</th>
+                <th style="padding: 8px; text-align: center; width: 40px;">No</th>
+                <th style="padding: 8px; text-align: left; width: 140px;">Waktu</th>
+                <th style="padding: 8px; text-align: left; width: 120px;">Pembeli</th>
                 <th style="padding: 8px; text-align: left;">Rincian Item</th>
-                <th style="padding: 8px; text-align: right; width: 130px;">Rincian Bayar</th>
-                <th style="padding: 8px; text-align: right; width: 100px;">Total</th>
+                <th style="padding: 8px; text-align: right; width: 120px;">Total</th>
               </tr>
             </thead>
             <tbody>
               ${rowsHtml}
             </tbody>
             <tfoot>
-              <tr style="background-color: #f8fafc; border-top: 2px solid #0f172a; font-weight: bold; font-size: 11px;">
-                <td colspan="4" style="padding: 10px; text-align: left;">
-                  RINGKASAN PERIODE INI:<br>
-                  <span style="font-weight: normal; color: #475569;">Total Bayar Diterima: Rp ${grandBayar.toLocaleString('id-ID')}</span><br>
-                  ${infoRingkasanHutang}
-                </td>
-                <td colspan="2" style="padding: 10px; text-align: right; font-size: 12px;">
-                  TOTAL OMSET:<br>
-                  <span style="color: #047857; font-size: 14px;">Rp ${grandTotal.toLocaleString('id-ID')}</span>
-                </td>
+              <tr style="background-color: #f8fafc; border-top: 2px solid #0f172a; font-weight: bold; font-size: 12px;">
+                <td colspan="4" style="padding: 10px; text-align: right;">TOTAL KESELURUHAN :</td>
+                <td style="padding: 10px; text-align: right; color: #047857;">Rp ${grandTotal.toLocaleString('id-ID')}</td>
               </tr>
             </tfoot>
           </table>
