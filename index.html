@@ -1146,7 +1146,7 @@
       const total = keranjang.reduce((sum, item) => sum + (item.harga * item.qty), 0);
       const bayar = parseFloat(document.getElementById('inputBayar').value) || 0;
       
-      if (bayar <= 0) {
+      if (bayar < 0) {
         alert("⚠️ Masukkan jumlah uang pembayaran terlebih dahulu!");
         document.getElementById('inputBayar').focus();
         return;
