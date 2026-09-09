@@ -1740,11 +1740,12 @@
           `;
         });
 
-        let infoKeseluruhanHtml = "";
+        // Detail Rincian Sisa Hutang atau Kembalian Keseluruhan
+        let infoHutangDetailHtml = "";
         if (grandKembaliHutang < 0) {
-          infoKeseluruhanHtml = `<span style="color: #e11d48;">Total Sisa Hutang: Rp ${Math.abs(grandKembaliHutang).toLocaleString('id-ID')}</span>`;
+          infoHutangDetailHtml = `<span style="color: #e11d48; font-size: 12px; font-weight: bold;">TOTAL SISA HUTANG: Rp ${Math.abs(grandKembaliHutang).toLocaleString('id-ID')}</span>`;
         } else {
-          infoKeseluruhanHtml = `<span style="color: #047857;">Total Kembalian/Lebih: Rp ${grandKembaliHutang.toLocaleString('id-ID')}</span>`;
+          infoHutangDetailHtml = `<span style="color: #047857; font-size: 12px; font-weight: bold;">STATUS: LUNAS / LEBIH (Rp ${grandKembaliHutang.toLocaleString('id-ID')})</span>`;
         }
 
         const tabelHtml = `
@@ -1763,10 +1764,15 @@
             </tbody>
             <tfoot>
               <tr style="background-color: #f8fafc; border-top: 2px solid #0f172a; font-weight: bold; font-size: 11px;">
-                <td colspan="3" style="padding: 10px; text-align: right;">RINGKASAN PEMBAYARAN :<br><span style="font-size: 10px; font-weight: normal; color: #475569;">Total Bayar Keseluruhan: Rp ${grandBayar.toLocaleString('id-ID')}</span><br>${infoKeseluruhanHtml}</td>
-                <td colspan="2" style="padding: 10px; text-align: right; font-size: 12px;">
-                  TOTAL BELANJA:<br>
-                  <span style="color: #047857; font-size: 14px;">Rp ${grandTotal.toLocaleString('id-ID')}</span>
+                <td colspan="3" style="padding: 10px; text-align: left;">
+                  RINGKASAN KEUANGAN PELANGGAN:<br>
+                  <span style="font-weight: normal; color: #475569;">Total Belanja Keseluruhan : Rp ${grandTotal.toLocaleString('id-ID')}</span><br>
+                  <span style="font-weight: normal; color: #475569;">Total Bayar Keseluruhan   : Rp ${grandBayar.toLocaleString('id-ID')}</span><br>
+                  <div style="margin-top: 4px;">${infoHutangDetailHtml}</div>
+                </td>
+                <td colspan="2" style="padding: 10px; text-align: right; font-size: 11px; vertical-align: top;">
+                  STATUS AKHIR:<br>
+                  ${grandKembaliHutang < 0 ? '<span style="color: #e11d48; font-size: 13px;">BELUM LUNAS</span>' : '<span style="color: #047857; font-size: 13px;">LUNAS</span>'}
                 </td>
               </tr>
             </tfoot>
@@ -1774,47 +1780,7 @@
           <p style="margin-top: 12px; font-size: 11px;">Jumlah Total Transaksi: <strong>${dataObj.listTransaksi.length} pesanan</strong></p>
         `;
         document.getElementById('printKontenTabel').innerHTML = tabelHtml;
-
-      } else {
-        dataObj.listTransaksi.forEach((trx, i) => {
-          grandTotal += Number(trx.total);
-          rowsHtml += `
-            <tr style="border-bottom: 1px solid #cbd5e1;">
-              <td style="padding: 8px; text-align: center; font-size: 11px;">${i + 1}</td>
-              <td style="padding: 8px; font-size: 11px;">${trx.tanggal || '-'} ${trx.waktu ? '(' + trx.waktu + ')' : ''}</td>
-              <td style="padding: 8px; font-size: 11px; font-weight: bold;">${trx.pembeli}</td>
-              <td style="padding: 8px; font-size: 11px;">${trx.items}</td>
-              <td style="padding: 8px; text-align: right; font-size: 11px; font-weight: bold;">Rp ${Number(trx.total).toLocaleString('id-ID')}</td>
-            </tr>
-          `;
-        });
-
-        const tabelHtml = `
-          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-            <thead>
-              <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; text-transform: uppercase; font-size: 11px;">
-                <th style="padding: 8px; text-align: center; width: 40px;">No</th>
-                <th style="padding: 8px; text-align: left; width: 140px;">Waktu</th>
-                <th style="padding: 8px; text-align: left; width: 120px;">Pembeli</th>
-                <th style="padding: 8px; text-align: left;">Rincian Item</th>
-                <th style="padding: 8px; text-align: right; width: 120px;">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rowsHtml}
-            </tbody>
-            <tfoot>
-              <tr style="background-color: #f8fafc; border-top: 2px solid #0f172a; font-weight: bold; font-size: 12px;">
-                <td colspan="4" style="padding: 10px; text-align: right;">TOTAL KESELURUHAN :</td>
-                <td style="padding: 10px; text-align: right; color: #047857;">Rp ${grandTotal.toLocaleString('id-ID')}</td>
-              </tr>
-            </tfoot>
-          </table>
-          <p style="margin-top: 12px; font-size: 11px;">Jumlah Total Transaksi: <strong>${dataObj.listTransaksi.length} pesanan</strong></p>
-        `;
-        document.getElementById('printKontenTabel').innerHTML = tabelHtml;
       }
-
       setTimeout(() => {
         window.print();
       }, 300);
@@ -1946,7 +1912,76 @@ async function cetakBluetoothBulanan(index) {
 async function cetakBluetoothPembeli(index) {
   const dataObj = cacheDataRekap.rekapPembeliBulanan[index];
   if (!dataObj) return;
-  await cetakThermalRekapUmum(`REKAP PEMBELI: ${dataObj.pembeli.toUpperCase()}`, `Pelanggan: ${dataObj.pembeli} (${dataObj.bulan})`, dataObj.listTransaksi);
+
+  const ESC = '\x1B';
+  const GS = '\x1D';
+  const INIT = ESC + '@';
+  const CENTER = ESC + 'a' + '\x01';
+  const LEFT = ESC + 'a' + '\x00';
+  const BOLD_ON = ESC + 'E' + '\x01';
+  const BOLD_OFF = ESC + 'E' + '\x00';
+  const CUT = GS + 'V' + '\x41' + '\x03';
+
+  let cetakText = INIT;
+  cetakText += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
+  cetakText += "Jl. Raya Jagapura Lor - Nyibanda\n";
+  cetakText += `REKAP PEMBELI: ${dataObj.pembeli.toUpperCase()}\n`;
+  cetakText += "--------------------------------\n";
+  cetakText += LEFT;
+  cetakText += `Periode : ${dataObj.bulan}\n`;
+  cetakText += `Cetak   : ${new Date().toLocaleString('id-ID')}\n`;
+  cetakText += "--------------------------------\n";
+
+  let grandTotalBelanja = 0;
+  let grandTotalBayar = 0;
+  let grandTotalHutangPiutang = 0;
+
+  dataObj.listTransaksi.forEach((trx, i) => {
+    grandTotalBelanja += Number(trx.total);
+    grandTotalBayar += Number(trx.bayar);
+    grandTotalHutangPiutang += Number(trx.kembali);
+
+    cetakText += `${i + 1}. Tgl: ${trx.tanggal || ''} ${trx.waktu || ''}\n`;
+    cetakText += `   Item: ${trx.items}\n`;
+    cetakText += `   Total : Rp ${Number(trx.total).toLocaleString('id-ID')}\n`;
+    cetakText += `   Bayar : Rp ${Number(trx.bayar).toLocaleString('id-ID')}\n`;
+    
+    if (trx.kembali >= 0) {
+      cetakText += `   Kembali: Rp ${trx.kembali.toLocaleString('id-ID')}\n`;
+    } else {
+      cetakText += `   Hutang : Rp ${Math.abs(trx.kembali).toLocaleString('id-ID')}\n`;
+    }
+    cetakText += "--------------------------------\n";
+  });
+
+  cetakText += BOLD_ON;
+  cetakText += `TOTAL BELANJA : Rp ${grandTotalBelanja.toLocaleString('id-ID')}\n`;
+  cetakText += `TOTAL BAYAR   : Rp ${grandTotalBayar.toLocaleString('id-ID')}\n`;
+  cetakText += "--------------------------------\n";
+
+  if (grandTotalHutangPiutang < 0) {
+    cetakText += `SISA HUTANG   : Rp ${Math.abs(grandTotalHutangPiutang).toLocaleString('id-ID')}\n`;
+  } else {
+    cetakText += `STATUS        : LUNAS / LEBIH\n`;
+  }
+  cetakText += BOLD_OFF + "--------------------------------\n";
+  cetakText += CENTER + "*** RINCIAN KEUANGAN PELANGGAN ***\n\n";
+
+  cetakText += CENTER + "Kunjungi Situs Kami\n";
+  cetakText += CENTER + "Scann QR Kode Dibawah ini\n";
+  const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
+  const storeLength = qrUrl.length + 3;
+  const pL = String.fromCharCode(storeLength % 256);
+  const pH = String.fromCharCode(Math.floor(storeLength / 256));
+
+  cetakText += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+  cetakText += GS + '(k' + '\x03\x00\x31\x43\x05';
+  cetakText += GS + '(k' + '\x03\x00\x31\x45\x30';
+  cetakText += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+  cetakText += GS + '(k' + '\x03\x00\x31\x51\x30';
+  cetakText += "\n\n\n" + CUT;
+
+  await kirimDataRawKePrinter(cetakText);
 }
 
 async function cetakThermalRekapUmum(judulLaporan, infoPeriode, listTransaksi) {
