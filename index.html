@@ -1917,6 +1917,75 @@
 
       await kirimDataRawKePrinter(cetakText);
     }
+
+    async function cetakBluetoothHarian(index) {
+  const dataObj = cacheDataRekap.harian[index];
+  if (!dataObj) return;
+  await cetakThermalRekapUmum(`REKAP HARIAN: ${dataObj.tanggal}`, `Tanggal: ${dataObj.tanggal}`, dataObj.listTransaksi);
+}
+
+async function cetakBluetoothBulanan(index) {
+  const dataObj = cacheDataRekap.bulanan[index];
+  if (!dataObj) return;
+  await cetakThermalRekapUmum(`REKAP BULANAN: ${dataObj.bulan}`, `Bulan: ${dataObj.bulan}`, dataObj.listTransaksi);
+}
+
+async function cetakBluetoothPembeli(index) {
+  const dataObj = cacheDataRekap.rekapPembeliBulanan[index];
+  if (!dataObj) return;
+  await cetakThermalRekapUmum(`REKAP PEMBELI: ${dataObj.pembeli.toUpperCase()}`, `Pelanggan: ${dataObj.pembeli} (${dataObj.bulan})`, dataObj.listTransaksi);
+}
+
+async function cetakThermalRekapUmum(judulLaporan, infoPeriode, listTransaksi) {
+  const ESC = '\x1B';
+  const GS = '\x1D';
+  const INIT = ESC + '@';
+  const CENTER = ESC + 'a' + '\x01';
+  const LEFT = ESC + 'a' + '\x00';
+  const BOLD_ON = ESC + 'E' + '\x01';
+  const BOLD_OFF = ESC + 'E' + '\x00';
+  const CUT = GS + 'V' + '\x41' + '\x03';
+
+  let cetakText = INIT;
+  cetakText += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
+  cetakText += "Jl. Raya Jagapura Lor - Nyibanda\n";
+  cetakText += `${judulLaporan}\n`;
+  cetakText += "--------------------------------\n";
+  cetakText += LEFT;
+  cetakText += `${infoPeriode}\n`;
+  cetakText += `Cetak : ${new Date().toLocaleString('id-ID')}\n`;
+  cetakText += "--------------------------------\n";
+
+  let grandTotal = 0;
+  listTransaksi.forEach((trx, i) => {
+    grandTotal += Number(trx.total);
+    cetakText += `${i + 1}. ${trx.tanggal || ''} ${trx.waktu || ''}\n`;
+    cetakText += `   Pembeli: ${trx.pembeli || '-'}\n`;
+    cetakText += `   Item: ${trx.items}\n`;
+    cetakText += `   Total: Rp ${Number(trx.total).toLocaleString('id-ID')}\n`;
+    cetakText += "--------------------------------\n";
+  });
+
+  cetakText += BOLD_ON;
+  cetakText += `TOTAL KESELURUHAN: Rp ${grandTotal.toLocaleString('id-ID')}\n`;
+  cetakText += BOLD_OFF + "--------------------------------\n";
+  cetakText += CENTER + "*** LAPORAN REKAP TRANSAKSI ***\n\n";
+
+  const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
+  const storeLength = qrUrl.length + 3;
+  const pL = String.fromCharCode(storeLength % 256);
+  const pH = String.fromCharCode(Math.floor(storeLength / 256));
+
+  cetakText += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+  cetakText += GS + '(k' + '\x03\x00\x31\x43\x05';
+  cetakText += GS + '(k' + '\x03\x00\x31\x45\x30';
+  cetakText += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+  cetakText += GS + '(k' + '\x03\x00\x31\x51\x30';
+  cetakText += "\n\n\n" + CUT;
+
+  await kirimDataRawKePrinter(cetakText);
+}
+    
   </script>
 </body>
 </html>
