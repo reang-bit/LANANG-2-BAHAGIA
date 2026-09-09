@@ -844,8 +844,8 @@
       textPrint += BOLD_OFF + "--------------------------------\n";
       textPrint += CENTER + "** MOHON SEGERA DIKEMBALIKAN **\n\n";
 
-      textPrint += CENTER + "Kunjungi Situs Kami\n";
-      textPrint += CENTER + "Scann QR Kode Dibawah ini\n";
+      cetakText += CENTER + "Kunjungi Situs Kami\n";
+      cetakText += CENTER + "Scann QR Kode Dibawah ini\n";
       const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
       const storeLength = qrUrl.length + 3;
       const pL = String.fromCharCode(storeLength % 256);
@@ -1367,7 +1367,7 @@
           if (trx.kembali >= 0) {
             statusBayarHtml = `<span class="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">Kembali: Rp ${trx.kembali.toLocaleString('id-ID')}</span>`;
           } else {
-            statusBayarHtml = `<span class="text-[10px] text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded border border-rose-100">Hutang: Rp ${Math.abs(trx.kembali).toLocaleString('id-ID')}</span>`;
+            statusBayarHtml = `<span class="text-[10px] text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded border border-emerald-100">Hutang: Rp ${Math.abs(trx.kembali).toLocaleString('id-ID')}</span>`;
           }
 
           listHtml += `
@@ -1487,7 +1487,7 @@
           if (trx.kembali >= 0) {
             statusBayarHtml = `<span class="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">Bayar: Rp ${trx.bayar.toLocaleString('id-ID')} | Kembali: Rp ${trx.kembali.toLocaleString('id-ID')}</span>`;
           } else {
-            statusBayarHtml = `<span class="text-[10px] text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded border border-rose-100">Bayar: Rp ${trx.bayar.toLocaleString('id-ID')} | Hutang: Rp ${Math.abs(trx.kembali).toLocaleString('id-ID')}</span>`;
+            statusBayarHtml = `<span class="text-[10px] text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded border border-emerald-100">Bayar: Rp ${trx.bayar.toLocaleString('id-ID')} | Hutang: Rp ${Math.abs(trx.kembali).toLocaleString('id-ID')}</span>`;
           }
 
           listHtml += `
@@ -1509,7 +1509,7 @@
 
         if (pb.totalHutangPiutang < 0) {
           const sisaUtangAbs = Math.abs(pb.totalHutangPiutang);
-          hutangPiutangBadge = `<span class="text-[10px] text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded border border-rose-100">Sisa Hutang Keseluruhan: Rp ${sisaUtangAbs.toLocaleString('id-ID')}</span>`;
+          hutangPiutangBadge = `<span class="text-[10px] text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded border border-emerald-100">Sisa Hutang Keseluruhan: Rp ${sisaUtangAbs.toLocaleString('id-ID')}</span>`;
           
           tombolBayarUtangHtml = `
             <button onclick="bukaModalBayarUtang('${pb.pembeli}', ${sisaUtangAbs})" class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow" title="Bayar Utang">
@@ -1685,7 +1685,7 @@
       await kirimDataRawKePrinter(cetakText);
     }
 
-   function cetakRekapSpesifik(tipe, index) {
+    function cetakRekapSpesifik(tipe, index) {
       let dataObj = null;
       let judul = "";
 
@@ -1740,7 +1740,6 @@
           `;
         });
 
-        // Detail Rincian Sisa Hutang atau Kembalian Keseluruhan
         let infoHutangDetailHtml = "";
         if (grandKembaliHutang < 0) {
           infoHutangDetailHtml = `<span style="color: #e11d48; font-size: 12px; font-weight: bold;">TOTAL SISA HUTANG: Rp ${Math.abs(grandKembaliHutang).toLocaleString('id-ID')}</span>`;
@@ -1780,7 +1779,74 @@
           <p style="margin-top: 12px; font-size: 11px;">Jumlah Total Transaksi: <strong>${dataObj.listTransaksi.length} pesanan</strong></p>
         `;
         document.getElementById('printKontenTabel').innerHTML = tabelHtml;
+
+      } else {
+        dataObj.listTransaksi.forEach((trx, i) => {
+          grandTotal += Number(trx.total);
+          grandBayar += Number(trx.bayar || 0);
+          let statusKembaliHutang = Number(trx.kembali || (trx.bayar - trx.total));
+          grandKembaliHutang += statusKembaliHutang;
+
+          let statusBayarCetak = "";
+          if (statusKembaliHutang >= 0) {
+            statusBayarCetak = `Bayar: Rp ${Number(trx.bayar || 0).toLocaleString('id-ID')}<br><span style="color: #047857; font-weight: bold;">Lunas / Kembali: Rp ${statusKembaliHutang.toLocaleString('id-ID')}</span>`;
+          } else {
+            statusBayarCetak = `Bayar: Rp ${Number(trx.bayar || 0).toLocaleString('id-ID')}<br><span style="color: #e11d48; font-weight: bold;">Hutang: Rp ${Math.abs(statusKembaliHutang).toLocaleString('id-ID')}</span>`;
+          }
+
+          rowsHtml += `
+            <tr style="border-bottom: 1px solid #cbd5e1;">
+              <td style="padding: 8px; text-align: center; font-size: 11px;">${i + 1}</td>
+              <td style="padding: 8px; font-size: 11px;">${trx.tanggal || '-'} ${trx.waktu ? '(' + trx.waktu + ')' : ''}</td>
+              <td style="padding: 8px; font-size: 11px; font-weight: bold;">${trx.pembeli}</td>
+              <td style="padding: 8px; font-size: 11px;">${trx.items}</td>
+              <td style="padding: 8px; text-align: right; font-size: 11px;">${statusBayarCetak}</td>
+              <td style="padding: 8px; text-align: right; font-size: 11px; font-weight: bold;">Rp ${Number(trx.total).toLocaleString('id-ID')}</td>
+            </tr>
+          `;
+        });
+
+        let infoRingkasanHutang = "";
+        if (grandKembaliHutang < 0) {
+          infoRingkasanHutang = `<span style="color: #e11d48;">Total Sisa Hutang Periode Ini: Rp ${Math.abs(grandKembaliHutang).toLocaleString('id-ID')}</span>`;
+        } else {
+          infoRingkasanHutang = `<span style="color: #047857;">Status: Seluruh transaksi terpantau aman/lunas/lebih</span>`;
+        }
+
+        const tabelHtml = `
+          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+              <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; text-transform: uppercase; font-size: 11px;">
+                <th style="padding: 8px; text-align: center; width: 35px;">No</th>
+                <th style="padding: 8px; text-align: left; width: 120px;">Waktu</th>
+                <th style="padding: 8px; text-align: left; width: 110px;">Pembeli</th>
+                <th style="padding: 8px; text-align: left;">Rincian Item</th>
+                <th style="padding: 8px; text-align: right; width: 130px;">Rincian Bayar</th>
+                <th style="padding: 8px; text-align: right; width: 100px;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+            <tfoot>
+              <tr style="background-color: #f8fafc; border-top: 2px solid #0f172a; font-weight: bold; font-size: 11px;">
+                <td colspan="4" style="padding: 10px; text-align: left;">
+                  RINGKASAN PERIODE INI:<br>
+                  <span style="font-weight: normal; color: #475569;">Total Bayar Diterima: Rp ${grandBayar.toLocaleString('id-ID')}</span><br>
+                  ${infoRingkasanHutang}
+                </td>
+                <td colspan="2" style="padding: 10px; text-align: right; font-size: 12px;">
+                  TOTAL OMSET:<br>
+                  <span style="color: #047857; font-size: 14px;">Rp ${grandTotal.toLocaleString('id-ID')}</span>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+          <p style="margin-top: 12px; font-size: 11px;">Jumlah Total Transaksi: <strong>${dataObj.listTransaksi.length} pesanan</strong></p>
+        `;
+        document.getElementById('printKontenTabel').innerHTML = tabelHtml;
       }
+
       setTimeout(() => {
         window.print();
       }, 300);
@@ -1881,7 +1947,6 @@
 
       cetakText += CENTER + "Kunjungi Situs Kami\n";
       cetakText += CENTER + "Scann QR Kode Dibawah ini\n";
-      cetakText += "Kunjungi situs kami";
       const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
       const storeLength = qrUrl.length + 3;
       const pL = String.fromCharCode(storeLength % 256);
@@ -1898,144 +1963,164 @@
     }
 
     async function cetakBluetoothHarian(index) {
-  const dataObj = cacheDataRekap.harian[index];
-  if (!dataObj) return;
-  await cetakThermalRekapUmum(`REKAP HARIAN: ${dataObj.tanggal}`, `Tanggal: ${dataObj.tanggal}`, dataObj.listTransaksi);
-}
-
-async function cetakBluetoothBulanan(index) {
-  const dataObj = cacheDataRekap.bulanan[index];
-  if (!dataObj) return;
-  await cetakThermalRekapUmum(`REKAP BULANAN: ${dataObj.bulan}`, `Bulan: ${dataObj.bulan}`, dataObj.listTransaksi);
-}
-
-async function cetakBluetoothPembeli(index) {
-  const dataObj = cacheDataRekap.rekapPembeliBulanan[index];
-  if (!dataObj) return;
-
-  const ESC = '\x1B';
-  const GS = '\x1D';
-  const INIT = ESC + '@';
-  const CENTER = ESC + 'a' + '\x01';
-  const LEFT = ESC + 'a' + '\x00';
-  const BOLD_ON = ESC + 'E' + '\x01';
-  const BOLD_OFF = ESC + 'E' + '\x00';
-  const CUT = GS + 'V' + '\x41' + '\x03';
-
-  let cetakText = INIT;
-  cetakText += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
-  cetakText += "Jl. Raya Jagapura Lor - Nyibanda\n";
-  cetakText += `REKAP PEMBELI: ${dataObj.pembeli.toUpperCase()}\n`;
-  cetakText += "--------------------------------\n";
-  cetakText += LEFT;
-  cetakText += `Periode : ${dataObj.bulan}\n`;
-  cetakText += `Cetak   : ${new Date().toLocaleString('id-ID')}\n`;
-  cetakText += "--------------------------------\n";
-
-  let grandTotalBelanja = 0;
-  let grandTotalBayar = 0;
-  let grandTotalHutangPiutang = 0;
-
-  dataObj.listTransaksi.forEach((trx, i) => {
-    grandTotalBelanja += Number(trx.total);
-    grandTotalBayar += Number(trx.bayar);
-    grandTotalHutangPiutang += Number(trx.kembali);
-
-    cetakText += `${i + 1}. Tgl: ${trx.tanggal || ''} ${trx.waktu || ''}\n`;
-    cetakText += `   Item: ${trx.items}\n`;
-    cetakText += `   Total : Rp ${Number(trx.total).toLocaleString('id-ID')}\n`;
-    cetakText += `   Bayar : Rp ${Number(trx.bayar).toLocaleString('id-ID')}\n`;
-    
-    if (trx.kembali >= 0) {
-      cetakText += `   Kembali: Rp ${trx.kembali.toLocaleString('id-ID')}\n`;
-    } else {
-      cetakText += `   Hutang : Rp ${Math.abs(trx.kembali).toLocaleString('id-ID')}\n`;
+      const dataObj = cacheDataRekap.harian[index];
+      if (!dataObj) return;
+      await cetakThermalRekapUmum(`REKAP HARIAN: ${dataObj.tanggal}`, `Tanggal: ${dataObj.tanggal}`, dataObj.listTransaksi);
     }
-    cetakText += "--------------------------------\n";
-  });
 
-  cetakText += BOLD_ON;
-  cetakText += `TOTAL BELANJA : Rp ${grandTotalBelanja.toLocaleString('id-ID')}\n`;
-  cetakText += `TOTAL BAYAR   : Rp ${grandTotalBayar.toLocaleString('id-ID')}\n`;
-  cetakText += "--------------------------------\n";
+    async function cetakBluetoothBulanan(index) {
+      const dataObj = cacheDataRekap.bulanan[index];
+      if (!dataObj) return;
+      await cetakThermalRekapUmum(`REKAP BULANAN: ${dataObj.bulan}`, `Bulan: ${dataObj.bulan}`, dataObj.listTransaksi);
+    }
 
-  if (grandTotalHutangPiutang < 0) {
-    cetakText += `SISA HUTANG   : Rp ${Math.abs(grandTotalHutangPiutang).toLocaleString('id-ID')}\n`;
-  } else {
-    cetakText += `STATUS        : LUNAS / LEBIH\n`;
-  }
-  cetakText += BOLD_OFF + "--------------------------------\n";
-  cetakText += CENTER + "*** RINCIAN KEUANGAN PELANGGAN ***\n\n";
+    async function cetakBluetoothPembeli(index) {
+      const dataObj = cacheDataRekap.rekapPembeliBulanan[index];
+      if (!dataObj) return;
 
-  cetakText += CENTER + "Kunjungi Situs Kami\n";
-  cetakText += CENTER + "Scann QR Kode Dibawah ini\n";
-  const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
-  const storeLength = qrUrl.length + 3;
-  const pL = String.fromCharCode(storeLength % 256);
-  const pH = String.fromCharCode(Math.floor(storeLength / 256));
+      const ESC = '\x1B';
+      const GS = '\x1D';
+      const INIT = ESC + '@';
+      const CENTER = ESC + 'a' + '\x01';
+      const LEFT = ESC + 'a' + '\x00';
+      const BOLD_ON = ESC + 'E' + '\x01';
+      const BOLD_OFF = ESC + 'E' + '\x00';
+      const CUT = GS + 'V' + '\x41' + '\x03';
 
-  cetakText += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
-  cetakText += GS + '(k' + '\x03\x00\x31\x43\x05';
-  cetakText += GS + '(k' + '\x03\x00\x31\x45\x30';
-  cetakText += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
-  cetakText += GS + '(k' + '\x03\x00\x31\x51\x30';
-  cetakText += "\n\n\n" + CUT;
+      let cetakText = INIT;
+      cetakText += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
+      cetakText += "Jl. Raya Jagapura Lor - Nyibanda\n";
+      cetakText += `REKAP PEMBELI: ${dataObj.pembeli.toUpperCase()}\n`;
+      cetakText += "--------------------------------\n";
+      cetakText += LEFT;
+      cetakText += `Periode : ${dataObj.bulan}\n`;
+      cetakText += `Cetak   : ${new Date().toLocaleString('id-ID')}\n`;
+      cetakText += "--------------------------------\n";
 
-  await kirimDataRawKePrinter(cetakText);
-}
+      let grandTotalBelanja = 0;
+      let grandTotalBayar = 0;
+      let grandTotalHutangPiutang = 0;
 
-async function cetakThermalRekapUmum(judulLaporan, infoPeriode, listTransaksi) {
-  const ESC = '\x1B';
-  const GS = '\x1D';
-  const INIT = ESC + '@';
-  const CENTER = ESC + 'a' + '\x01';
-  const LEFT = ESC + 'a' + '\x00';
-  const BOLD_ON = ESC + 'E' + '\x01';
-  const BOLD_OFF = ESC + 'E' + '\x00';
-  const CUT = GS + 'V' + '\x41' + '\x03';
+      dataObj.listTransaksi.forEach((trx, i) => {
+        grandTotalBelanja += Number(trx.total);
+        grandTotalBayar += Number(trx.bayar);
+        grandTotalHutangPiutang += Number(trx.kembali);
 
-  let cetakText = INIT;
-  cetakText += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
-  cetakText += "Jl. Raya Jagapura Lor - Nyibanda\n";
-  cetakText += `${judulLaporan}\n`;
-  cetakText += "--------------------------------\n";
-  cetakText += LEFT;
-  cetakText += `${infoPeriode}\n`;
-  cetakText += `Cetak : ${new Date().toLocaleString('id-ID')}\n`;
-  cetakText += "--------------------------------\n";
+        cetakText += `${i + 1}. Tgl: ${trx.tanggal || ''} ${trx.waktu || ''}\n`;
+        cetakText += `   Item: ${trx.items}\n`;
+        cetakText += `   Total : Rp ${Number(trx.total).toLocaleString('id-ID')}\n`;
+        cetakText += `   Bayar : Rp ${Number(trx.bayar).toLocaleString('id-ID')}\n`;
+        
+        if (trx.kembali >= 0) {
+          cetakText += `   Kembali: Rp ${trx.kembali.toLocaleString('id-ID')}\n`;
+        } else {
+          cetakText += `   Hutang : Rp ${Math.abs(trx.kembali).toLocaleString('id-ID')}\n`;
+        }
+        cetakText += "--------------------------------\n";
+      });
 
-  let grandTotal = 0;
-  listTransaksi.forEach((trx, i) => {
-    grandTotal += Number(trx.total);
-    cetakText += `${i + 1}. ${trx.tanggal || ''} ${trx.waktu || ''}\n`;
-    cetakText += `   Pembeli: ${trx.pembeli || '-'}\n`;
-    cetakText += `   Item: ${trx.items}\n`;
-    cetakText += `   Total: Rp ${Number(trx.total).toLocaleString('id-ID')}\n`;
-    cetakText += "--------------------------------\n";
-  });
+      cetakText += BOLD_ON;
+      cetakText += `TOTAL BELANJA : Rp ${grandTotalBelanja.toLocaleString('id-ID')}\n`;
+      cetakText += `TOTAL BAYAR   : Rp ${grandTotalBayar.toLocaleString('id-ID')}\n`;
+      cetakText += "--------------------------------\n";
 
-  cetakText += BOLD_ON;
-  cetakText += `TOTAL KESELURUHAN: Rp ${grandTotal.toLocaleString('id-ID')}\n`;
-  cetakText += BOLD_OFF + "--------------------------------\n";
-  cetakText += CENTER + "*** LAPORAN REKAP TRANSAKSI ***\n\n";
+      if (grandTotalHutangPiutang < 0) {
+        cetakText += `SISA HUTANG   : Rp ${Math.abs(grandTotalHutangPiutang).toLocaleString('id-ID')}\n`;
+      } else {
+        cetakText += `STATUS        : LUNAS / LEBIH\n`;
+      }
+      cetakText += BOLD_OFF + "--------------------------------\n";
+      cetakText += CENTER + "*** RINCIAN TRANSAKSI ***\n\n";
 
-  cetakText += CENTER + "Kunjungi Situs Kami\n";
-  cetakText += CENTER + "Scann QR Kode Dibawah ini\n";
-  const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
-  const storeLength = qrUrl.length + 3;
-  const pL = String.fromCharCode(storeLength % 256);
-  const pH = String.fromCharCode(Math.floor(storeLength / 256));
+      cetakText += CENTER + "Kunjungi Situs Kami\n";
+      cetakText += CENTER + "Scann QR Kode Dibawah ini\n";
+      const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
+      const storeLength = qrUrl.length + 3;
+      const pL = String.fromCharCode(storeLength % 256);
+      const pH = String.fromCharCode(Math.floor(storeLength / 256));
 
-  cetakText += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
-  cetakText += GS + '(k' + '\x03\x00\x31\x43\x05';
-  cetakText += GS + '(k' + '\x03\x00\x31\x45\x30';
-  cetakText += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
-  cetakText += GS + '(k' + '\x03\x00\x31\x51\x30';
-  cetakText += "\n\n\n" + CUT;
+      cetakText += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+      cetakText += GS + '(k' + '\x03\x00\x31\x43\x05';
+      cetakText += GS + '(k' + '\x03\x00\x31\x45\x30';
+      cetakText += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+      cetakText += GS + '(k' + '\x03\x00\x31\x51\x30';
+      cetakText += "\n\n\n" + CUT;
 
-  await kirimDataRawKePrinter(cetakText);
-}
-    
+      await kirimDataRawKePrinter(cetakText);
+    }
+
+    async function cetakThermalRekapUmum(judulLaporan, infoPeriode, listTransaksi) {
+      const ESC = '\x1B';
+      const GS = '\x1D';
+      const INIT = ESC + '@';
+      const CENTER = ESC + 'a' + '\x01';
+      const LEFT = ESC + 'a' + '\x00';
+      const BOLD_ON = ESC + 'E' + '\x01';
+      const BOLD_OFF = ESC + 'E' + '\x00';
+      const CUT = GS + 'V' + '\x41' + '\x03';
+
+      let cetakText = INIT;
+      cetakText += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
+      cetakText += "Jl. Raya Jagapura Lor - Nyibanda\n";
+      cetakText += `${judulLaporan}\n`;
+      cetakText += "--------------------------------\n";
+      cetakText += LEFT;
+      cetakText += `${infoPeriode}\n`;
+      cetakText += `Cetak : ${new Date().toLocaleString('id-ID')}\n`;
+      cetakText += "--------------------------------\n";
+
+      let grandTotalOmset = 0;
+      let grandTotalBayar = 0;
+      let grandTotalHutang = 0;
+
+      listTransaksi.forEach((trx, i) => {
+        grandTotalOmset += Number(trx.total);
+        let bayarTrx = Number(trx.bayar || 0);
+        grandTotalBayar += bayarTrx;
+        
+        let kembaliHutangTrx = Number(trx.kembali || (bayarTrx - trx.total));
+        if (kembaliHutangTrx < 0) {
+          grandTotalHutang += Math.abs(kembaliHutangTrx);
+        }
+
+        cetakText += `${i + 1}. ${trx.tanggal || ''} ${trx.waktu || ''}\n`;
+        cetakText += `   Pembeli: ${trx.pembeli || '-'}\n`;
+        cetakText += `   Item   : ${trx.items}\n`;
+        cetakText += `   Total  : Rp ${Number(trx.total).toLocaleString('id-ID')}\n`;
+        cetakText += `   Bayar  : Rp ${bayarTrx.toLocaleString('id-ID')}\n`;
+
+        if (kembaliHutangTrx >= 0) {
+          cetakText += `   Status : LUNAS / Kembali\n`;
+        } else {
+          cetakText += `   Status : HUTANG (Rp ${Math.abs(kembaliHutangTrx).toLocaleString('id-ID')})\n`;
+        }
+        cetakText += "--------------------------------\n";
+      });
+
+      cetakText += BOLD_ON;
+      cetakText += `TOTAL OMSET  : Rp ${grandTotalOmset.toLocaleString('id-ID')}\n`;
+      cetakText += `TOTAL BAYAR  : Rp ${grandTotalBayar.toLocaleString('id-ID')}\n`;
+      if (grandTotalHutang > 0) {
+        cetakText += `TOTAL HUTANG : Rp ${grandTotalHutang.toLocaleString('id-ID')}\n`;
+      }
+      cetakText += BOLD_OFF + "--------------------------------\n";
+      cetakText += CENTER + "** LAPORAN REKAP TRANSAKSI **\n\n";
+      cetakText += CENTER + "Kunjungi Situs Kami\n";
+      cetakText += CENTER + "Scann QR Kode Dibawah ini\n";
+      const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
+      const storeLength = qrUrl.length + 3;
+      const pL = String.fromCharCode(storeLength % 256);
+      const pH = String.fromCharCode(Math.floor(storeLength / 256));
+
+      cetakText += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+      cetakText += GS + '(k' + '\x03\x00\x31\x43\x05';
+      cetakText += GS + '(k' + '\x03\x00\x31\x45\x30';
+      cetakText += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+      cetakText += GS + '(k' + '\x03\x00\x31\x51\x30';
+      cetakText += "\n\n\n" + CUT;
+
+      await kirimDataRawKePrinter(cetakText);
+    }
   </script>
 </body>
 </html>
