@@ -1694,152 +1694,129 @@
     }
 
   function cetakRekapSpesifik(tipe, index) {
-      let dataObj = null;
-      let judul = "";
+      pastikanDataRekapSiap(() => {
+        let judul = "";
+        let tabelHtml = "";
+        let infoWaktu = "";
+        const tglCetak = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
-      // Pastikan struktur cache ada
-      if (typeof cacheDataRekap === 'undefined') window.cacheDataRekap = {};
-      if (typeof filteredDataRekapCache === 'undefined') window.filteredDataRekapCache = {};
-
-      // Auto-generate cache 'pembeli' darurat jika kosong dan data transaksi utama tersedia
-      if (tipe === 'pembeli' && (!cacheDataRekap['pembeli'] || cacheDataRekap['pembeli'].length === 0)) {
-        if (typeof transaksiData !== 'undefined' && Array.isArray(transaksiData)) {
-          let mapPembeli = {};
-          transaksiData.forEach(trx => {
-            let namaPembeli = (trx.pembeli || 'Umum').trim();
-            let bulanTrx = trx.tanggal ? trx.tanggal.substring(0, 7) : 'Semua';
-            let kunci = `${namaPembeli}_${bulanTrx}`;
-
-            if (!mapPembeli[kunci]) {
-              mapPembeli[kunci] = {
-                pembeli: namaPembeli,
-                bulan: bulanTrx,
-                listTransaksi: []
-              };
-            }
-            mapPembeli[kunci].listTransaksi.push(trx);
+        if (tipe === 'harian') {
+          const item = filteredDataRekapCache.harian[index];
+          if (!item) { alert("⚠️ Data rekap harian tidak ditemukan."); return; }
+          judul = `LAPORAN REKAPITULASI HARIAN - ${item.tanggal}`;
+          infoWaktu = `Tanggal: ${item.tanggal} | Total Pesanan: ${item.listTransaksi.length}`;
+          
+          let rows = "";
+          item.listTransaksi.forEach((t, i) => {
+            rows += `
+              <tr style="border-bottom: 1px solid #cbd5e1;">
+                <td style="padding: 6px; text-align: center; font-size: 11px;">${i + 1}</td>
+                <td style="padding: 6px; font-size: 11px;">${t.waktu}</td>
+                <td style="padding: 6px; font-size: 11px;">${t.pembeli}</td>
+                <td style="padding: 6px; font-size: 11px;">${t.items}</td>
+                <td style="padding: 6px; text-align: right; font-size: 11px; font-weight: bold;">Rp ${Number(t.total).toLocaleString('id-ID')}</td>
+              </tr>`;
           });
-          cacheDataRekap['pembeli'] = Object.values(mapPembeli);
+          tabelHtml = `
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+              <thead>
+                <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; font-size: 11px;">
+                  <th style="padding: 6px; text-align: center; width: 35px;">No</th>
+                  <th style="padding: 6px; text-align: left; width: 70px;">Waktu</th>
+                  <th style="padding: 6px; text-align: left; width: 110px;">Pembeli</th>
+                  <th style="padding: 6px; text-align: left;">Rincian Item</th>
+                  <th style="padding: 6px; text-align: right; width: 90px;">Total</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+              <tfoot>
+                <tr style="background-color: #f8fafc; border-top: 2px solid #0f172a; font-weight: bold; font-size: 12px;">
+                  <td colspan="4" style="padding: 8px; text-align: right;">TOTAL OMSET HARIAN :</td>
+                  <td style="padding: 8px; text-align: right; color: #047857;">Rp ${item.totalOmset.toLocaleString('id-ID')}</td>
+                </tr>
+              </tfoot>
+            </table>`;
+        } else if (tipe === 'bulanan') {
+          const item = filteredDataRekapCache.bulanan[index];
+          if (!item) { alert("⚠️ Data rekap bulanan tidak ditemukan."); return; }
+          judul = `LAPORAN REKAPITULASI BULANAN - ${item.bulan}`;
+          infoWaktu = `Periode Bulan: ${item.bulan} | Total Pesanan: ${item.listTransaksi.length}`;
+
+          let rows = "";
+          item.listTransaksi.forEach((t, i) => {
+            rows += `
+              <tr style="border-bottom: 1px solid #cbd5e1;">
+                <td style="padding: 6px; text-align: center; font-size: 11px;">${i + 1}</td>
+                <td style="padding: 6px; font-size: 11px;">${t.tanggal}</td>
+                <td style="padding: 6px; font-size: 11px;">${t.pembeli}</td>
+                <td style="padding: 6px; font-size: 11px;">${t.items}</td>
+                <td style="padding: 6px; text-align: right; font-size: 11px; font-weight: bold;">Rp ${Number(t.total).toLocaleString('id-ID')}</td>
+              </tr>`;
+          });
+          tabelHtml = `
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+              <thead>
+                <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; font-size: 11px;">
+                  <th style="padding: 6px; text-align: center; width: 35px;">No</th>
+                  <th style="padding: 6px; text-align: left; width: 85px;">Tanggal</th>
+                  <th style="padding: 6px; text-align: left; width: 110px;">Pembeli</th>
+                  <th style="padding: 6px; text-align: left;">Rincian Item</th>
+                  <th style="padding: 6px; text-align: right; width: 90px;">Total</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+              <tfoot>
+                <tr style="background-color: #f8fafc; border-top: 2px solid #0f172a; font-weight: bold; font-size: 12px;">
+                  <td colspan="4" style="padding: 8px; text-align: right;">TOTAL OMSET BULANAN :</td>
+                  <td style="padding: 8px; text-align: right; color: #047857;">Rp ${item.totalOmset.toLocaleString('id-ID')}</td>
+                </tr>
+              </tfoot>
+            </table>`;
+        } else if (tipe === 'pembeli') {
+          const item = filteredDataRekapCache.rekapPembeliBulanan[index];
+          if (!item) { alert("⚠️ Data rekap pembeli tidak ditemukan."); return; }
+          judul = `REKAP TRANSAKSI PELANGGAN: ${item.pembeli.toUpperCase()}`;
+          infoWaktu = `Bulan: ${item.bulan} | Total Belanja: Rp ${item.totalBelanja.toLocaleString('id-ID')}`;
+
+          let rows = "";
+          item.listTransaksi.forEach((t, i) => {
+            rows += `
+              <tr style="border-bottom: 1px solid #cbd5e1;">
+                <td style="padding: 6px; text-align: center; font-size: 11px;">${i + 1}</td>
+                <td style="padding: 6px; font-size: 11px;">${t.tanggal} (${t.waktu})</td>
+                <td style="padding: 6px; font-size: 11px;">${t.items}</td>
+                <td style="padding: 6px; text-align: right; font-size: 11px;">Rp ${Number(t.bayar).toLocaleString('id-ID')}</td>
+                <td style="padding: 6px; text-align: right; font-size: 11px; font-weight: bold;">Rp ${Number(t.total).toLocaleString('id-ID')}</td>
+              </tr>`;
+          });
+          tabelHtml = `
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+              <thead>
+                <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; font-size: 11px;">
+                  <th style="padding: 6px; text-align: center; width: 35px;">No</th>
+                  <th style="padding: 6px; text-align: left; width: 130px;">Waktu</th>
+                  <th style="padding: 6px; text-align: left;">Rincian Item</th>
+                  <th style="padding: 6px; text-align: right; width: 85px;">Bayar</th>
+                  <th style="padding: 6px; text-align: right; width: 90px;">Total</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+              <tfoot>
+                <tr style="background-color: #f8fafc; border-top: 2px solid #0f172a; font-weight: bold; font-size: 12px;">
+                  <td colspan="4" style="padding: 8px; text-align: right;">TOTAL BELANJA & PEMBAYARAN :</td>
+                  <td style="padding: 8px; text-align: right; color: #047857;">Rp ${item.totalBelanja.toLocaleString('id-ID')}</td>
+                </tr>
+              </tfoot>
+            </table>`;
         }
-      }
 
-      const filteredArray = filteredDataRekapCache[tipe];
-      const mainArray = cacheDataRekap[tipe];
+        document.getElementById('printJudulLaporan').innerText = judul;
+        document.getElementById('printInfoWaktu').innerText = infoWaktu;
+        document.getElementById('printTglCetak').innerText = tglCetak;
+        document.getElementById('printKontenTabel').innerHTML = tabelHtml;
 
-      if (filteredArray && filteredArray.length > index) {
-        dataObj = filteredArray[index];
-      } else if (mainArray && mainArray.length > index) {
-        dataObj = mainArray[index];
-      }
-
-      if (!dataObj) {
-        if (mainArray && mainArray.length > 0) {
-          dataObj = mainArray[0];
-        } else {
-          alert("⚠️ Data rekap belum lengkap atau tidak ditemukan. Silakan klik tombol 'Refresh Rekap' terlebih dahulu.");
-          return;
-        }
-      }
-
-      // Penyesuaian Judul dan Informasi Berdasarkan Tipe Rekap
-      if (tipe === 'harian') {
-        judul = `REKAP HARIAN - TANGGAL: ${dataObj.tanggal}`;
-        document.getElementById('printInfoWaktu').innerText = `Periode Tanggal: ${dataObj.tanggal}`;
-      } else if (tipe === 'bulanan') {
-        judul = `REKAP BULANAN - BULAN: ${dataObj.bulan}`;
-        document.getElementById('printInfoWaktu').innerText = `Periode Bulan: ${dataObj.bulan}`;
-      } else if (tipe === 'pembeli') {
-        judul = `REKAP PER PEMBELI - ${(dataObj.pembeli || 'PELANGGAN').toUpperCase()} (${dataObj.bulan || ''})`;
-        document.getElementById('printInfoWaktu').innerText = `Nama Pelanggan: ${dataObj.pembeli || '-'} | Periode: ${dataObj.bulan || '-'}`;
-      }
-
-      document.getElementById('printJudulLaporan').innerText = judul;
-      document.getElementById('printTglCetak').innerText = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-
-      let rowsHtml = '';
-      let grandTotal = 0;
-      let grandBayar = 0;
-      let grandKembaliHutang = 0;
-
-      const daftarTrx = dataObj.listTransaksi || [];
-
-      daftarTrx.forEach((trx, i) => {
-        let totalTrx = Number(trx.total || 0);
-        let bayarTrx = Number(trx.bayar || 0);
-        if (bayarTrx === 0 && totalTrx > 0 && trx.kembali === undefined) {
-          bayarTrx = totalTrx;
-        }
-        let kembaliHutangTrx = Number(trx.kembali !== undefined ? trx.kembali : (bayarTrx - totalTrx));
-
-        grandTotal += totalTrx;
-        grandBayar += bayarTrx;
-        grandKembaliHutang += kembaliHutangTrx;
-
-        let statusBayarCetak = "";
-        if (kembaliHutangTrx >= 0) {
-          statusBayarCetak = `Bayar: Rp ${bayarTrx.toLocaleString('id-ID')}<br><span style="color: #047857; font-weight: bold;">Kembali: Rp ${kembaliHutangTrx.toLocaleString('id-ID')}</span>`;
-        } else {
-          statusBayarCetak = `Bayar: Rp ${bayarTrx.toLocaleString('id-ID')}<br><span style="color: #e11d48; font-weight: bold;">Hutang: Rp ${Math.abs(kembaliHutangTrx).toLocaleString('id-ID')}</span>`;
-        }
-
-        let waktuKolom = (trx.tanggal || '-') + (trx.waktu ? ' (' + trx.waktu + ')' : '');
-
-        rowsHtml += `
-          <tr style="border-bottom: 1px solid #cbd5e1;">
-            <td style="padding: 8px; text-align: center; font-size: 11px;">${i + 1}</td>
-            <td style="padding: 8px; font-size: 11px;">${waktuKolom}</td>
-            <td style="padding: 8px; font-size: 11px; font-weight: bold;">${trx.pembeli || dataObj.pembeli || '-'}</td>
-            <td style="padding: 8px; font-size: 11px;">${trx.items || '-'}</td>
-            <td style="padding: 8px; text-align: right; font-size: 11px;">${statusBayarCetak}</td>
-            <td style="padding: 8px; text-align: right; font-size: 11px; font-weight: bold;">Rp ${totalTrx.toLocaleString('id-ID')}</td>
-          </tr>
-        `;
+        setTimeout(() => window.print(), 350);
       });
-
-      let infoKeseluruhanHtml = "";
-      if (grandKembaliHutang < 0) {
-        infoKeseluruhanHtml = `<span style="color: #e11d48; font-weight: bold;">Total Sisa Hutang: Rp ${Math.abs(grandKembaliHutang).toLocaleString('id-ID')}</span>`;
-      } else {
-        infoKeseluruhanHtml = `<span style="color: #047857; font-weight: bold;">Total Kembalian/Lebih: Rp ${grandKembaliHutang.toLocaleString('id-ID')}</span>`;
-      }
-
-      const tabelHtml = `
-        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-          <thead>
-            <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; text-transform: uppercase; font-size: 11px;">
-              <th style="padding: 8px; text-align: center; width: 35px;">No</th>
-              <th style="padding: 8px; text-align: left; width: 130px;">Waktu</th>
-              <th style="padding: 8px; text-align: left; width: 90px;">Pembeli</th>
-              <th style="padding: 8px; text-align: left;">Rincian Item</th>
-              <th style="padding: 8px; text-align: right; width: 130px;">Rincian Bayar</th>
-              <th style="padding: 8px; text-align: right; width: 90px;">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rowsHtml}
-          </tbody>
-          <tfoot>
-            <tr style="background-color: #f8fafc; border-top: 2px solid #0f172a; font-weight: bold; font-size: 11px;">
-              <td colspan="4" style="padding: 10px; text-align: right;">
-                RINGKASAN KEUANGAN :<br>
-                <span style="font-size: 10px; font-weight: normal; color: #475569;">Total Uang Masuk: Rp ${grandBayar.toLocaleString('id-ID')}</span><br>
-                ${infoKeseluruhanHtml}
-              </td>
-              <td colspan="2" style="padding: 10px; text-align: right; font-size: 12px;">
-                TOTAL BELANJA:<br>
-                <span style="color: #047857; font-size: 13px;">Rp ${grandTotal.toLocaleString('id-ID')}</span>
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-        <p style="margin-top: 12px; font-size: 11px;">Jumlah Total Transaksi: <strong>${daftarTrx.length} pesanan</strong></p>
-      `;
-      
-      document.getElementById('printKontenTabel').innerHTML = tabelHtml;
-
-      setTimeout(() => {
-        window.print();
-      }, 300);
     }
     
     let bluetoothDevice = null;
