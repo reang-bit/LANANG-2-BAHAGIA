@@ -1697,7 +1697,32 @@
       let dataObj = null;
       let judul = "";
 
-      // Ambil data dari cache filter atau cache utama berdasarkan tipe
+      // Pastikan struktur cache ada
+      if (typeof cacheDataRekap === 'undefined') window.cacheDataRekap = {};
+      if (typeof filteredDataRekapCache === 'undefined') window.filteredDataRekapCache = {};
+
+      // Auto-generate cache 'pembeli' darurat jika kosong dan data transaksi utama tersedia
+      if (tipe === 'pembeli' && (!cacheDataRekap['pembeli'] || cacheDataRekap['pembeli'].length === 0)) {
+        if (typeof transaksiData !== 'undefined' && Array.isArray(transaksiData)) {
+          let mapPembeli = {};
+          transaksiData.forEach(trx => {
+            let namaPembeli = (trx.pembeli || 'Umum').trim();
+            let bulanTrx = trx.tanggal ? trx.tanggal.substring(0, 7) : 'Semua'; // Format YYYY-MM
+            let kunci = `${namaPembeli}_${bulanTrx}`;
+
+            if (!mapPembeli[kunci]) {
+              mapPembeli[kunci] = {
+                pembeli: namaPembeli,
+                bulan: bulanTrx,
+                listTransaksi: []
+              };
+            }
+            mapPembeli[kunci].listTransaksi.push(trx);
+          });
+          cacheDataRekap['pembeli'] = Object.values(mapPembeli);
+        }
+      }
+
       const filteredArray = filteredDataRekapCache[tipe];
       const mainArray = cacheDataRekap[tipe];
 
@@ -1707,18 +1732,13 @@
         dataObj = mainArray[index];
       }
 
-      // Penanganan khusus jika data per pembeli diakses lewat indeks langsung
       if (!dataObj) {
-        if (tipe === 'pembeli' && filteredArray && filteredArray.length > 0) {
-          dataObj = filteredArray[0];
-        } else if (mainArray && mainArray.length > 0) {
+        if (mainArray && mainArray.length > 0) {
           dataObj = mainArray[0];
+        } else {
+          alert("⚠️ Data transaksi kosong. Mohon pastikan data transaksi sudah dimuat di aplikasi.");
+          return;
         }
-      }
-
-      if (!dataObj) {
-        alert("⚠️ Data rekap belum lengkap atau tidak ditemukan. Silakan klik tombol 'Refresh Rekap' terlebih dahulu.");
-        return;
       }
 
       // Penyesuaian Judul dan Informasi Berdasarkan Tipe Rekap
@@ -1730,7 +1750,7 @@
         document.getElementById('printInfoWaktu').innerText = `Periode Bulan: ${dataObj.bulan}`;
       } else if (tipe === 'pembeli') {
         judul = `REKAP PER PEMBELI - ${(dataObj.pembeli || 'PELANGGAN').toUpperCase()} (${dataObj.bulan || ''})`;
-        document.getElementById('printInfoWaktu').innerText = `Nama Pelanggan: ${dataObj.pembeli || '-'} | Periode Bulan: ${dataObj.bulan || '-'}`;
+        document.getElementById('printInfoWaktu').innerText = `Nama Pelanggan: ${dataObj.pembeli || '-'} | Periode: ${dataObj.bulan || '-'}`;
       }
 
       document.getElementById('printJudulLaporan').innerText = judul;
@@ -1807,7 +1827,7 @@
               </td>
               <td colspan="2" style="padding: 10px; text-align: right; font-size: 12px;">
                 TOTAL BELANJA:<br>
-                <span style="color: #047857; font-size: 13px;">Rp ${grandTotal.toLocaleString('id-ID')}</span>
+                <span style="color: #047857; font-size: 13px;">Rp ${totalTrx.toLocaleString('id-ID')}</span>
               </td>
             </tr>
           </tfoot>
