@@ -1697,16 +1697,29 @@
       let dataObj = null;
       let judul = "";
 
-      const sourceArray = (filteredDataRekapCache[tipe] && filteredDataRekapCache[tipe].length > 0) 
-        ? filteredDataRekapCache[tipe] 
-        : cacheDataRekap[tipe];
+      // Cek apakah menggunakan data hasil filter atau data cache utama
+      const filteredArray = filteredDataRekapCache[tipe];
+      const mainArray = cacheDataRekap[tipe];
 
-      if (!sourceArray || !sourceArray[index]) {
-        alert("⚠️ Data rekap belum lengkap atau tidak ditemukan.");
-        return;
+      if (filteredArray && filteredArray.length > index) {
+        dataObj = filteredArray[index];
+      } else if (mainArray && mainArray.length > index) {
+        dataObj = mainArray[index];
       }
 
-      dataObj = sourceArray[index];
+      if (!dataObj) {
+        // Fallback pencarian fleksibel jika indeks meleset akibat filter
+        if (tipe === 'pembeli' && filteredArray && filteredArray.length > 0) {
+          dataObj = filteredArray[0];
+        } else if (mainArray && mainArray.length > 0) {
+          dataObj = mainArray[0];
+        }
+      }
+
+      if (!dataObj) {
+        alert("⚠️ Data rekap belum lengkap atau tidak ditemukan. Silakan klik tombol 'Refresh Rekap' terlebih dahulu.");
+        return;
+      }
 
       if (tipe === 'harian') {
         judul = `REKAP HARIAN - TANGGAL: ${dataObj.tanggal}`;
@@ -1715,8 +1728,8 @@
         judul = `REKAP BULANAN - BULAN: ${dataObj.bulan}`;
         document.getElementById('printInfoWaktu').innerText = `Periode Bulan: ${dataObj.bulan}`;
       } else if (tipe === 'pembeli') {
-        judul = `REKAP PER PEMBELI - ${dataObj.pembeli.toUpperCase()} (${dataObj.bulan})`;
-        document.getElementById('printInfoWaktu').innerText = `Nama Pelanggan: ${dataObj.pembeli} | Periode Bulan: ${dataObj.bulan}`;
+        judul = `REKAP PER PEMBELI - ${(dataObj.pembeli || 'PELANGGAN').toUpperCase()} (${dataObj.bulan || ''})`;
+        document.getElementById('printInfoWaktu').innerText = `Nama Pelanggan: ${dataObj.pembeli || '-'} | Periode Bulan: ${dataObj.bulan || '-'}`;
       }
 
       document.getElementById('printJudulLaporan').innerText = judul;
@@ -1727,10 +1740,11 @@
       let grandBayar = 0;
       let grandKembaliHutang = 0;
 
-      dataObj.listTransaksi.forEach((trx, i) => {
+      const daftarTrx = dataObj.listTransaksi || [];
+
+      daftarTrx.forEach((trx, i) => {
         let totalTrx = Number(trx.total || 0);
         let bayarTrx = Number(trx.bayar || 0);
-        // Jika data bayar kosong/0 pada rekap lama, asumsikan bayar = total (lunas) agar aman
         if (bayarTrx === 0 && totalTrx > 0 && trx.kembali === undefined) {
           bayarTrx = totalTrx;
         }
@@ -1747,8 +1761,7 @@
           statusBayarCetak = `Bayar: Rp ${bayarTrx.toLocaleString('id-ID')}<br><span style="color: #e11d48; font-weight: bold;">Hutang: Rp ${Math.abs(kembaliHutangTrx).toLocaleString('id-ID')}</span>`;
         }
 
-        let namaPembeliKolom = (tipe === 'pembeli') ? (trx.tanggal + ' ' + (trx.waktu ? '(' + trx.waktu + ')' : '')) : (trx.pembeli || '-');
-        let waktuKolom = (tipe === 'pembeli') ? (trx.tanggal + ' ' + (trx.waktu ? '(' + trx.waktu + ')' : '')) : (trx.tanggal || '-');
+        let waktuKolom = (trx.tanggal || '-') + (trx.waktu ? ' (' + trx.waktu + ')' : '');
 
         rowsHtml += `
           <tr style="border-bottom: 1px solid #cbd5e1;">
@@ -1774,11 +1787,11 @@
           <thead>
             <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; text-transform: uppercase; font-size: 11px;">
               <th style="padding: 8px; text-align: center; width: 35px;">No</th>
-              <th style="padding: 8px; text-align: left; width: 110px;">Waktu</th>
-              <th style="padding: 8px; text-align: left; width: 100px;">Pembeli</th>
+              <th style="padding: 8px; text-align: left; width: 130px;">Waktu</th>
+              <th style="padding: 8px; text-align: left; width: 90px;">Pembeli</th>
               <th style="padding: 8px; text-align: left;">Rincian Item</th>
               <th style="padding: 8px; text-align: right; width: 130px;">Rincian Bayar</th>
-              <th style="padding: 8px; text-align: right; width: 95px;">Total</th>
+              <th style="padding: 8px; text-align: right; width: 90px;">Total</th>
             </tr>
           </thead>
           <tbody>
@@ -1798,7 +1811,7 @@
             </tr>
           </tfoot>
         </table>
-        <p style="margin-top: 12px; font-size: 11px;">Jumlah Total Transaksi: <strong>${dataObj.listTransaksi.length} pesanan</strong></p>
+        <p style="margin-top: 12px; font-size: 11px;">Jumlah Total Transaksi: <strong>${daftarTrx.length} pesanan</strong></p>
       `;
       
       document.getElementById('printKontenTabel').innerHTML = tabelHtml;
