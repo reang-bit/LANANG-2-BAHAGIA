@@ -1697,7 +1697,7 @@
       let dataObj = null;
       let judul = "";
 
-      // Cek apakah menggunakan data hasil filter atau data cache utama
+      // Ambil data dari cache filter atau cache utama berdasarkan tipe
       const filteredArray = filteredDataRekapCache[tipe];
       const mainArray = cacheDataRekap[tipe];
 
@@ -1707,8 +1707,8 @@
         dataObj = mainArray[index];
       }
 
+      // Penanganan khusus jika data per pembeli diakses lewat indeks langsung
       if (!dataObj) {
-        // Fallback pencarian fleksibel jika indeks meleset akibat filter
         if (tipe === 'pembeli' && filteredArray && filteredArray.length > 0) {
           dataObj = filteredArray[0];
         } else if (mainArray && mainArray.length > 0) {
@@ -1721,6 +1721,7 @@
         return;
       }
 
+      // Penyesuaian Judul dan Informasi Berdasarkan Tipe Rekap
       if (tipe === 'harian') {
         judul = `REKAP HARIAN - TANGGAL: ${dataObj.tanggal}`;
         document.getElementById('printInfoWaktu').innerText = `Periode Tanggal: ${dataObj.tanggal}`;
