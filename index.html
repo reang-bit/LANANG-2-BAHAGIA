@@ -541,6 +541,7 @@
     let isKasirUnlocked = false;
 
     let cacheDataRekap = { harian: [], bulanan: [], rekapPembeliBulanan: [] };
+    let filteredDataRekapCache = { harian: [], bulanan: [], rekapPembeliBulanan: [] };
     let isDataRekapLoaded = false;
     let dataKosonganLengkapCache = [];
     let selectedPelangganKosonganData = null;
@@ -1318,6 +1319,12 @@
         };
       }).filter(pb => pb.listTransaksi.length > 0);
 
+      filteredDataRekapCache = {
+        harian: filteredHarian,
+        bulanan: filteredBulanan,
+        rekapPembeliBulanan: filteredPembeli
+      };
+
       renderRekapHarian(filteredHarian);
       renderRekapBulanan(filteredBulanan);
       renderRekapPembeliBulanan(filteredPembeli);
@@ -1337,6 +1344,7 @@
                 rekapPembeliBulanan: Array.isArray(res.rekapPembeliBulanan) ? res.rekapPembeliBulanan : []
               };
               isDataRekapLoaded = true;
+              terapkanFilterRekap();
               callback();
             } else {
               alert("⚠️ Gagal memuat data lengkap untuk pencetakan.");
@@ -1689,18 +1697,21 @@
       let dataObj = null;
       let judul = "";
 
+      const sourceArray = (filteredDataRekapCache[tipe] && filteredDataRekapCache[tipe].length > 0) 
+        ? filteredDataRekapCache[tipe] 
+        : cacheDataRekap[tipe];
+
+      dataObj = sourceArray[index];
+
       if (tipe === 'harian') {
-        dataObj = cacheDataRekap.harian[index];
-        judul = `REKAP HARIAN - TANGGAL: ${dataObj.tanggal}`;
-        document.getElementById('printInfoWaktu').innerText = `Periode Tanggal: ${dataObj.tanggal}`;
+        judul = dataObj ? `REKAP HARIAN - TANGGAL: ${dataObj.tanggal}` : "REKAP HARIAN";
+        if(dataObj) document.getElementById('printInfoWaktu').innerText = `Periode Tanggal: ${dataObj.tanggal}`;
       } else if (tipe === 'bulanan') {
-        dataObj = cacheDataRekap.bulanan[index];
-        judul = `REKAP BULANAN - BULAN: ${dataObj.bulan}`;
-        document.getElementById('printInfoWaktu').innerText = `Periode Bulan: ${dataObj.bulan}`;
+        judul = dataObj ? `REKAP BULANAN - BULAN: ${dataObj.bulan}` : "REKAP BULANAN";
+        if(dataObj) document.getElementById('printInfoWaktu').innerText = `Periode Bulan: ${dataObj.bulan}`;
       } else if (tipe === 'pembeli') {
-        dataObj = cacheDataRekap.rekapPembeliBulanan[index];
-        judul = `REKAP PER PEMBELI - ${dataObj.pembeli.toUpperCase()} (${dataObj.bulan})`;
-        document.getElementById('printInfoWaktu').innerText = `Nama Pelanggan: ${dataObj.pembeli} | Periode Bulan: ${dataObj.bulan}`;
+        judul = dataObj ? `REKAP PER PEMBELI - ${dataObj.pembeli.toUpperCase()} (${dataObj.bulan})` : "REKAP PER PEMBELI";
+        if(dataObj) document.getElementById('printInfoWaktu').innerText = `Nama Pelanggan: ${dataObj.pembeli} | Periode Bulan: ${dataObj.bulan}`;
       }
 
       if (!dataObj) {
@@ -1931,19 +1942,22 @@
     }
 
     async function cetakBluetoothHarian(index) {
-      const dataObj = cacheDataRekap.harian[index];
+      const sourceArray = (filteredDataRekapCache.harian && filteredDataRekapCache.harian.length > 0) ? filteredDataRekapCache.harian : cacheDataRekap.harian;
+      const dataObj = sourceArray[index];
       if (!dataObj) return;
       await cetakThermalRekapUmum(`REKAP HARIAN: ${dataObj.tanggal}`, `Tanggal: ${dataObj.tanggal}`, dataObj.listTransaksi);
     }
 
     async function cetakBluetoothBulanan(index) {
-      const dataObj = cacheDataRekap.bulanan[index];
+      const sourceArray = (filteredDataRekapCache.bulanan && filteredDataRekapCache.bulanan.length > 0) ? filteredDataRekapCache.bulanan : cacheDataRekap.bulanan;
+      const dataObj = sourceArray[index];
       if (!dataObj) return;
       await cetakThermalRekapUmum(`REKAP BULANAN: ${dataObj.bulan}`, `Bulan: ${dataObj.bulan}`, dataObj.listTransaksi);
     }
 
     async function cetakBluetoothPembeli(index) {
-      const dataObj = cacheDataRekap.rekapPembeliBulanan[index];
+      const sourceArray = (filteredDataRekapCache.rekapPembeliBulanan && filteredDataRekapCache.rekapPembeliBulanan.length > 0) ? filteredDataRekapCache.rekapPembeliBulanan : cacheDataRekap.rekapPembeliBulanan;
+      const dataObj = sourceArray[index];
       if (!dataObj) return;
 
       const ESC = '\x1B';
@@ -2052,27 +2066,17 @@
         }
 
         cetakText += `${i + 1}. ${trx.tanggal || ''} ${trx.waktu || ''}\n`;
-        cetakText += `   Pembeli: ${trx.pembeli || '-'}\n`;
-        cetakText += `   Item   : ${trx.items}\n`;
-        cetakText += `   Total  : Rp ${Number(trx.total).toLocaleString('id-ID')}\n`;
-        cetakText += `   Bayar  : Rp ${bayarTrx.toLocaleString('id-ID')}\n`;
-
-        if (kembaliHutangTrx >= 0) {
-          cetakText += `   Status : LUNAS / Kembali\n`;
-        } else {
-          cetakText += `   Status : HUTANG (Rp ${Math.abs(kembaliHutangTrx).toLocaleString('id-ID')})\n`;
-        }
+        cetakText += `   👤 ${trx.pembeli}\n`;
+        cetakText += `   🛒 ${trx.items}\n`;
+        cetakText += `   Total: Rp ${Number(trx.total).toLocaleString('id-ID')}\n`;
         cetakText += "--------------------------------\n";
       });
 
       cetakText += BOLD_ON;
-      cetakText += `TOTAL OMSET  : Rp ${grandTotalOmset.toLocaleString('id-ID')}\n`;
-      cetakText += `TOTAL BAYAR  : Rp ${grandTotalBayar.toLocaleString('id-ID')}\n`;
-      if (grandTotalHutang > 0) {
-        cetakText += `TOTAL HUTANG : Rp ${grandTotalHutang.toLocaleString('id-ID')}\n`;
-      }
+      cetakText += `TOTAL KESELURUHAN: Rp ${grandTotalOmset.toLocaleString('id-ID')}\n`;
       cetakText += BOLD_OFF + "--------------------------------\n";
-      cetakText += CENTER + "** LAPORAN REKAP TRANSAKSI **\n\n";
+      cetakText += CENTER + "*** TERIMA KASIH ***\n\n";
+
       cetakText += CENTER + "Kunjungi Situs Kami\n";
       cetakText += CENTER + "Scann QR Kode Dibawah ini\n\n";
       const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
