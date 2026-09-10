@@ -753,7 +753,7 @@
       containerDetail.classList.remove('hidden');
     }
 
-    function prosesBayarKosonganMenu() {
+   function prosesBayarKosonganMenu() {
       if (!selectedPelangganKosonganData) {
         alert("⚠️ Silakan pilih pelanggan kosongan terlebih dahulu!");
         return;
@@ -762,7 +762,7 @@
       const nominal = parseFloat(document.getElementById('inputBayarKosonganNominal').value) || 0;
       const catatan = document.getElementById('inputCatatanBayarKosongan').value.trim() || "PELUNASAN KOSONGAN";
 
-      if (nominal < 0) {
+      if (isNaN(nominal) || nominal < 0) {
         alert("⚠️ Masukkan nominal pembayaran yang valid!");
         document.getElementById('inputBayarKosonganNominal').focus();
         return;
