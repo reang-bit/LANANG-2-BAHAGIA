@@ -725,7 +725,7 @@
         });
     }
     
-    function tampilkanDetailKosonganPelanggan(selectEl) {
+   function tampilkanDetailKosonganPelanggan(selectEl) {
       const idx = selectEl.value;
       const containerDetail = document.getElementById('containerDetailKosongan');
       const tbody = document.getElementById('tabelDetailKosonganList');
@@ -750,13 +750,9 @@
             <td class="py-3 px-4 text-slate-800 align-middle">${trx.items}</td>
             <td class="py-3 px-4 text-right font-bold text-emerald-700 align-middle">Rp ${Number(trx.total).toLocaleString('id-ID')}</td>
             <td class="py-3 px-4 text-center align-middle">
-              <div class="flex items-center justify-center gap-2">
-                <input type="number" id="inputBayarRow_${i}" placeholder="Nominal..." value="${trx.total}" 
-                       class="w-28 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:bg-white focus:ring-1 focus:ring-emerald-500 outline-none">
-                <button onclick="prosesBayarBarisKosongan(${i})" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition shadow">
-                  💳 Bayar
-                </button>
-              </div>
+              <button onclick="prosesBayarBarisKosongan(${i})" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition shadow">
+                💳 Lunasi Kosongan
+              </button>
             </td>
           </tr>
         `;
@@ -769,15 +765,8 @@
       if (!selectedPelangganKosonganData) return;
 
       const trx = selectedPelangganKosonganData.listTransaksi[indexTransaksi];
-      const inputEl = document.getElementById(`inputBayarRow_${indexTransaksi}`);
-      const nominal = parseFloat(inputEl.value) || 0;
+      const nominal = Number(trx.total) || 0;
       const namaPembeli = selectedPelangganKosonganData.pembeli;
-
-      if (nominal <= 0) {
-        alert("⚠️ Masukkan nominal pembayaran yang valid!");
-        inputEl.focus();
-        return;
-      }
 
       if (!confirm(`Konfirmasi pelunasan kosongan item "${trx.items}" untuk "${namaPembeli}" sebesar Rp ${nominal.toLocaleString('id-ID')}?`)) {
         return;
@@ -809,7 +798,6 @@
           alert("⚠️ Gagal terhubung ke Database.");
         });
     }
-    
     
     function prosesBayarKosonganMenu() {
       if (!selectedPelangganKosonganData) {
