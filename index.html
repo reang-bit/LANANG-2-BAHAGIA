@@ -742,12 +742,21 @@
       judul.innerText = `📋 Detail Kosongan: ${selectedPelangganKosonganData.pembeli}`;
       tbody.innerHTML = '';
 
-      selectedPelangganKosonganData.listTransaksi.forEach(trx => {
+      selectedPelangganKosonganData.listTransaksi.forEach((trx, i) => {
         tbody.innerHTML += `
           <tr class="hover:bg-slate-50/80 transition">
-            <td class="py-3 px-4 text-slate-600 font-semibold">${trx.tanggal || '-'} (${trx.waktu || '-'})</td>
-            <td class="py-3 px-4 text-slate-800">${trx.items}</td>
-            <td class="py-3 px-4 text-right font-bold text-emerald-700">Rp ${Number(trx.total).toLocaleString('id-ID')}</td>
+            <td class="py-3 px-4 text-slate-600 font-semibold align-middle">${trx.tanggal || '-'} (${trx.waktu || '-'})</td>
+            <td class="py-3 px-4 text-slate-800 align-middle">${trx.items}</td>
+            <td class="py-3 px-4 text-right font-bold text-emerald-700 align-middle">Rp ${Number(trx.total).toLocaleString('id-ID')}</td>
+            <td class="py-3 px-4 text-center align-middle">
+              <div class="flex items-center justify-center gap-2">
+                <input type="number" id="inputBayarRow_${i}" placeholder="Nominal..." value="${trx.total}" 
+                       class="w-28 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:bg-white focus:ring-1 focus:ring-emerald-500 outline-none">
+                <button onclick="prosesBayarBarisKosongan(${i})" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition shadow">
+                  💳 Bayar
+                </button>
+              </div>
+            </td>
           </tr>
         `;
       });
@@ -755,6 +764,52 @@
       containerDetail.classList.remove('hidden');
     }
 
+    function prosesBayarBarisKosongan(indexTransaksi) {
+      if (!selectedPelangganKosonganData) return;
+
+      const trx = selectedPelangganKosonganData.listTransaksi[indexTransaksi];
+      const inputEl = document.getElementById(`inputBayarRow_${indexTransaksi}`);
+      const nominal = parseFloat(inputEl.value) || 0;
+      const namaPembeli = selectedPelangganKosonganData.pembeli;
+
+      if (nominal <= 0) {
+        alert("⚠️ Masukkan nominal pembayaran yang valid!");
+        inputEl.focus();
+        return;
+      }
+
+      if (!confirm(`Konfirmasi pelunasan kosongan item "${trx.items}" untuk "${namaPembeli}" sebesar Rp ${nominal.toLocaleString('id-ID')}?`)) {
+        return;
+      }
+
+      showLoading(true, "Menyimpan pelunasan kosongan...");
+
+      const params = new URLSearchParams({
+        action: 'bayarKosongan',
+        namaPembeli: namaPembeli,
+        nominal: nominal,
+        catatan: `PELUNASAN KOSONGAN: ${trx.items}`
+      });
+
+      fetch(`${API_URL}?${params.toString()}`, { method: 'GET', redirect: 'follow' })
+        .then(res => res.json())
+        .then(res => {
+          showLoading(false);
+          if (res.success) {
+            alert("✅ Pelunasan kosongan berhasil disimpan!");
+            muatDataPelangganKosongan();
+            document.getElementById('containerDetailKosongan').classList.add('hidden');
+          } else {
+            alert("⚠️ Gagal: " + (res.message || "Terjadi kesalahan"));
+          }
+        })
+        .catch(err => {
+          showLoading(false);
+          alert("⚠️ Gagal terhubung ke Database.");
+        });
+    }
+    
+    
     function prosesBayarKosonganMenu() {
       if (!selectedPelangganKosonganData) {
         alert("⚠️ Silakan pilih pelanggan kosongan terlebih dahulu!");
