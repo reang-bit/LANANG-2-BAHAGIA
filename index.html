@@ -697,14 +697,14 @@
         .catch(err => console.error("Gagal memuat pelanggan", err));
     }
 
-    function muatDataPelangganKosongan() {
+   function muatDataPelangganKosongan() {
       showLoading(true, "Memuat data pelanggan kosongan...");
       fetch(`${API_URL}?action=getPelangganKosongan`, { method: "GET", redirect: "follow" })
         .then(res => res.json())
         .then(res => {
           showLoading(false);
           if (res.success && res.data) {
-            dataKosonganLengkapCache = res.data; // Berisi daftar nama pelanggan yang masih punya utang kosongan
+            dataKosonganLengkapCache = res.data;
             
             const select = document.getElementById('selectPelangganKosonganMenu');
             select.innerHTML = '<option value="">-- Pilih Pelanggan Kosongan --</option>';
@@ -712,8 +712,9 @@
             if (dataKosonganLengkapCache.length === 0) {
               select.innerHTML += '<option value="" disabled>Tidak ada data kosongan (Semua Sudah Lunas)</option>';
             } else {
-              dataKosonganLengkapCache.forEach((namaPelanggan, idx) => {
-                select.innerHTML += `<option value="${idx}">${namaPelanggan}</option>`;
+              dataKosonganLengkapCache.forEach((pelangganObj, idx) => {
+                // Perbaikan: gunakan indeks (idx) untuk referensi data, dan tampilkan nama pembelinya saja
+                select.innerHTML += `<option value="${idx}">${pelangganObj.pembeli}</option>`;
               });
             }
           }
