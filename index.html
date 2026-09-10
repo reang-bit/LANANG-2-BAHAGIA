@@ -699,40 +699,21 @@
 
     function muatDataPelangganKosongan() {
       showLoading(true, "Memuat data pelanggan kosongan...");
-      fetch(`${API_URL}?action=getRekap`, { method: "GET", redirect: "follow" })
+      fetch(`${API_URL}?action=getPelangganKosongan`, { method: "GET", redirect: "follow" })
         .then(res => res.json())
         .then(res => {
           showLoading(false);
-          if (res.success && res.rekapPembeliBulanan) {
-            let listPelangganMap = {};
+          if (res.success && res.data) {
+            dataKosonganLengkapCache = res.data; // Berisi daftar nama pelanggan yang masih punya utang kosongan
             
-            res.rekapPembeliBulanan.forEach(pb => {
-              let trxKosongan = pb.listTransaksi.filter(t => {
-                let itemUpper = (t.items || "").toUpperCase();
-                return itemUpper.includes("KOSONGAN BELUM") || itemUpper.includes("KOSONGAN BELUM SEMUA");
-              });
-
-              if (trxKosongan.length > 0) {
-                if (!listPelangganMap[pb.pembeli]) {
-                  listPelangganMap[pb.pembeli] = [];
-                }
-                listPelangganMap[pb.pembeli].push(...trxKosongan);
-              }
-            });
-
-            dataKosonganLengkapCache = Object.keys(listPelangganMap).map(nama => ({
-              pembeli: nama,
-              listTransaksi: listPelangganMap[nama]
-            }));
-
             const select = document.getElementById('selectPelangganKosonganMenu');
             select.innerHTML = '<option value="">-- Pilih Pelanggan Kosongan --</option>';
             
             if (dataKosonganLengkapCache.length === 0) {
-              select.innerHTML += '<option value="" disabled>Tidak ada data kosongan (Semua Lunas/Sudah)</option>';
+              select.innerHTML += '<option value="" disabled>Tidak ada data kosongan (Semua Sudah Lunas)</option>';
             } else {
-              dataKosonganLengkapCache.forEach((item, idx) => {
-                select.innerHTML += `<option value="${idx}">${item.pembeli} (${item.listTransaksi.length} Catatan)</option>`;
+              dataKosonganLengkapCache.forEach((namaPelanggan, idx) => {
+                select.innerHTML += `<option value="${idx}">${namaPelanggan}</option>`;
               });
             }
           }
@@ -742,7 +723,7 @@
           console.error("Gagal memuat pelanggan kosongan", err);
         });
     }
-
+    
     function tampilkanDetailKosonganPelanggan(selectEl) {
       const idx = selectEl.value;
       const containerDetail = document.getElementById('containerDetailKosongan');
