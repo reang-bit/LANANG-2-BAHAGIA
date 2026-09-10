@@ -808,11 +808,7 @@
       const nominal = parseFloat(document.getElementById('inputBayarKosonganNominal').value) || 0;
       const catatan = document.getElementById('inputCatatanBayarKosongan').value.trim() || "PELUNASAN KOSONGAN";
 
-      if (nominal < 0) {
-        alert("⚠️ Masukkan nominal pembayaran yang valid!");
-        document.getElementById('inputBayarKosonganNominal').focus();
-        return;
-      }
+    
 
       const namaPembeli = selectedPelangganKosonganData.pembeli;
 
