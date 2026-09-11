@@ -1863,6 +1863,62 @@
     let infoWaktu = "";
     const tglCetak = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
+    // Helper untuk memformat rincian item ala termal (Nama Barang x QTY @Harga = Subtotal + Diskon + Catatan)
+    function formatRincianTermal(t) {
+      let htmlRincian = "";
+      
+      // Jika data transaksi menyimpan array parsed items (seperti format termal)
+      let parsedItems = t.itemsArray || (typeof t.items === 'object' ? t.items : null);
+
+      if (Array.isArray(parsedItems) && parsedItems.length > 0) {
+        parsedItems.forEach(item => {
+          let namaBarang = item.nama || item.name || item.barang || 'Item';
+          let qty = item.qty || item.jumlah || 1;
+          let harga = item.harga || item.price || 0;
+          let diskonItem = item.diskon || item.disc || 0;
+          let subtotal = (qty * harga) - diskonItem;
+
+          htmlRincian += `<div style="margin-bottom: 3px;">
+            <div style="font-weight: 600;">• ${namaBarang}</div>
+            <div style="padding-left: 10px; color: #334155; font-size: 10px;">
+              ${qty} x Rp ${Number(harga).toLocaleString('id-ID')}
+              ${diskonItem > 0 ? ` (Disc: Rp ${Number(diskonItem).toLocaleString('id-ID')})` : ''} 
+              = <b>Rp ${Number(subtotal).toLocaleString('id-ID')}</b>
+            </div>`;
+          if (item.catatan || item.note) {
+            htmlRincian += `<div style="padding-left: 10px; color: #64748b; font-style: italic; font-size: 9.5px;">Note: "${item.catatan || item.note}"</div>`;
+          }
+          htmlRincian += `</div>`;
+        });
+      } else {
+        // Fallback jika format data berupa string teks biasa
+        htmlRincian = `<span>${t.items || '-'}</span>`;
+      }
+
+      // Informasi Pembayaran ala Struk Termal (Tunai/Bayar, Kembalian/Hutang)
+      let bayar = Number(t.bayar) || 0;
+      let totalTrx = Number(t.total) || 0;
+      let kembali = t.kembali !== undefined ? Number(t.kembali) : (bayar - totalTrx);
+      
+      let statusBayarHtml = "";
+      if (bayar > 0) {
+        statusBayarHtml += `<div style="margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 3px; font-size: 10px; color: #475569;">
+          <div>Bayar: Rp ${bayar.toLocaleString('id-ID')}</div>`;
+        if (kembali >= 0) {
+          statusBayarHtml += `<div style="color: #047857; font-weight: 600;">Kembali: Rp ${kembali.toLocaleString('id-ID')}</div>`;
+        } else {
+          statusBayarHtml += `<div style="color: #b91c1c; font-weight: 600;">Hutang / Belum Lunas: Rp ${Math.abs(kembali).toLocaleString('id-ID')}</div>`;
+        }
+        statusBayarHtml += `</div>`;
+      }
+
+      if (t.catatanTransaksi || t.catatanUmum) {
+        statusBayarHtml += `<div style="font-size: 9.5px; color: #64748b; font-style: italic; margin-top: 2px;">Catatan Trx: "${t.catatanTransaksi || t.catatanUmum}"</div>`;
+      }
+
+      return htmlRincian + statusBayarHtml;
+    }
+
     if (tipe === 'harian') {
       const item = filteredDataRekapCache.harian[index];
       if (!item) { alert("⚠️ Data rekap harian tidak ditemukan."); return; }
@@ -1871,14 +1927,13 @@
       
       let rows = "";
       item.listTransaksi.forEach((t, i) => {
-        let statusTeks = t.kembali >= 0 ? `Kembali: Rp ${Number(t.kembali).toLocaleString('id-ID')}` : `Hutang: Rp ${Math.abs(Number(t.kembali)).toLocaleString('id-ID')}`;
         rows += `
-          <tr style="border-bottom: 1px solid #cbd5e1;">
+          <tr style="border-bottom: 1px solid #cbd5e1; vertical-align: top;">
             <td style="padding: 6px; text-align: center; font-size: 11px;">${i + 1}</td>
-            <td style="padding: 6px; font-size: 11px;">${t.waktu || '-'}</td>
-            <td style="padding: 6px; font-size: 11px;">${t.pembeli}</td>
-            <td style="padding: 6px; font-size: 11px;">${t.items} <br/><small style="color: #64748b;">(${statusTeks})</small></td>
-            <td style="padding: 6px; text-align: right; font-size: 11px; font-weight: bold;">Rp ${Number(t.total).toLocaleString('id-ID')}</td>
+            <td style="padding: 6px; font-size: 11px; white-space: nowrap;">${t.waktu || '-'}</td>
+            <td style="padding: 6px; font-size: 11px; font-weight: 500;">${t.pembeli}</td>
+            <td style="padding: 6px; font-size: 11px;">${formatRincianTermal(t)}</td>
+            <td style="padding: 6px; text-align: right; font-size: 11px; font-weight: bold; white-space: nowrap;">Rp ${Number(t.total).toLocaleString('id-ID')}</td>
           </tr>`;
       });
       tabelHtml = `
@@ -1886,9 +1941,9 @@
           <thead>
             <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; font-size: 11px;">
               <th style="padding: 6px; text-align: center; width: 35px;">No</th>
-              <th style="padding: 6px; text-align: left; width: 70px;">Waktu</th>
-              <th style="padding: 6px; text-align: left; width: 110px;">Pembeli</th>
-              <th style="padding: 6px; text-align: left;">Rincian Item & Status</th>
+              <th style="padding: 6px; text-align: left; width: 65px;">Waktu</th>
+              <th style="padding: 6px; text-align: left; width: 100px;">Pembeli</th>
+              <th style="padding: 6px; text-align: left;">Rincian Item & Pembayaran (Termal Style)</th>
               <th style="padding: 6px; text-align: right; width: 90px;">Total</th>
             </tr>
           </thead>
@@ -1908,14 +1963,13 @@
 
       let rows = "";
       item.listTransaksi.forEach((t, i) => {
-        let statusTeks = t.kembali >= 0 ? `Kembali: Rp ${Number(t.kembali).toLocaleString('id-ID')}` : `Hutang: Rp ${Math.abs(Number(t.kembali)).toLocaleString('id-ID')}`;
         rows += `
-          <tr style="border-bottom: 1px solid #cbd5e1;">
+          <tr style="border-bottom: 1px solid #cbd5e1; vertical-align: top;">
             <td style="padding: 6px; text-align: center; font-size: 11px;">${i + 1}</td>
-            <td style="padding: 6px; font-size: 11px;">${t.tanggal}</td>
-            <td style="padding: 6px; font-size: 11px;">${t.pembeli}</td>
-            <td style="padding: 6px; font-size: 11px;">${t.items} <br/><small style="color: #64748b;">(${statusTeks})</small></td>
-            <td style="padding: 6px; text-align: right; font-size: 11px; font-weight: bold;">Rp ${Number(t.total).toLocaleString('id-ID')}</td>
+            <td style="padding: 6px; font-size: 11px; white-space: nowrap;">${t.tanggal}</td>
+            <td style="padding: 6px; font-size: 11px; font-weight: 500;">${t.pembeli}</td>
+            <td style="padding: 6px; font-size: 11px;">${formatRincianTermal(t)}</td>
+            <td style="padding: 6px; text-align: right; font-size: 11px; font-weight: bold; white-space: nowrap;">Rp ${Number(t.total).toLocaleString('id-ID')}</td>
           </tr>`;
       });
       tabelHtml = `
@@ -1923,9 +1977,9 @@
           <thead>
             <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; font-size: 11px;">
               <th style="padding: 6px; text-align: center; width: 35px;">No</th>
-              <th style="padding: 6px; text-align: left; width: 85px;">Tanggal</th>
-              <th style="padding: 6px; text-align: left; width: 110px;">Pembeli</th>
-              <th style="padding: 6px; text-align: left;">Rincian Item & Status</th>
+              <th style="padding: 6px; text-align: left; width: 80px;">Tanggal</th>
+              <th style="padding: 6px; text-align: left; width: 100px;">Pembeli</th>
+              <th style="padding: 6px; text-align: left;">Rincian Item & Pembayaran (Termal Style)</th>
               <th style="padding: 6px; text-align: right; width: 90px;">Total</th>
             </tr>
           </thead>
@@ -1946,12 +2000,12 @@
       let rows = "";
       item.listTransaksi.forEach((t, i) => {
         rows += `
-          <tr style="border-bottom: 1px solid #cbd5e1;">
+          <tr style="border-bottom: 1px solid #cbd5e1; vertical-align: top;">
             <td style="padding: 6px; text-align: center; font-size: 11px;">${i + 1}</td>
-            <td style="padding: 6px; font-size: 11px;">${t.tanggal} (${t.waktu || '-'})</td>
-            <td style="padding: 6px; font-size: 11px;">${t.items}</td>
-            <td style="padding: 6px; text-align: right; font-size: 11px;">Rp ${Number(t.bayar).toLocaleString('id-ID')}</td>
-            <td style="padding: 6px; text-align: right; font-size: 11px; font-weight: bold;">Rp ${Number(t.total).toLocaleString('id-ID')}</td>
+            <td style="padding: 6px; font-size: 11px; white-space: nowrap;">${t.tanggal} <br/><small style="color: #64748b;">${t.waktu || '-'}</small></td>
+            <td style="padding: 6px; font-size: 11px;">${formatRincianTermal(t)}</td>
+            <td style="padding: 6px; text-align: right; font-size: 11px; white-space: nowrap;">Rp ${Number(t.bayar || 0).toLocaleString('id-ID')}</td>
+            <td style="padding: 6px; text-align: right; font-size: 11px; font-weight: bold; white-space: nowrap;">Rp ${Number(t.total).toLocaleString('id-ID')}</td>
           </tr>`;
       });
       tabelHtml = `
@@ -1959,8 +2013,8 @@
           <thead>
             <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; font-size: 11px;">
               <th style="padding: 6px; text-align: center; width: 35px;">No</th>
-              <th style="padding: 6px; text-align: left; width: 130px;">Waktu</th>
-              <th style="padding: 6px; text-align: left;">Rincian Item</th>
+              <th style="padding: 6px; text-align: left; width: 110px;">Waktu</th>
+              <th style="padding: 6px; text-align: left;">Rincian Item & Catatan (Termal Style)</th>
               <th style="padding: 6px; text-align: right; width: 85px;">Bayar</th>
               <th style="padding: 6px; text-align: right; width: 90px;">Total</th>
             </tr>
