@@ -169,6 +169,9 @@
         <button id="btnTabKasir" onclick="switchTab('kasir')" class="px-4 py-2 rounded-xl text-xs font-bold transition text-slate-600 hover:text-slate-900 whitespace-nowrap">
           🛒 Kasir 🔒
         </button>
+        <button id="btnTabHutang" onclick="switchTab('hutang')" class="px-4 py-2 rounded-xl text-xs font-bold transition text-slate-600 hover:text-slate-900 whitespace-nowrap">
+          📌 Daftar Hutang 🔒
+        </button>
         <button id="btnTabKosongan" onclick="switchTab('kosongan')" class="px-4 py-2 rounded-xl text-xs font-bold transition text-slate-600 hover:text-slate-900 whitespace-nowrap">
           🔄 Menu Kosongan 🔒
         </button>
@@ -378,6 +381,46 @@
       </div>
     </div>
 
+    <!-- TAB DAFTAR HUTANG -->
+    <div id="tabHutang" class="hidden space-y-6 max-w-5xl mx-auto">
+      <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800">📌 Daftar Hutang / Piutang Pelanggan</h2>
+          <p class="text-xs text-slate-500">Ringkasan seluruh pelanggan yang masih memiliki tunggakan/sisa hutang pembayaran.</p>
+        </div>
+        <button onclick="muatDataHutang()" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-2 shadow-sm">
+          <span>🔄</span> Refresh Data Hutang
+        </button>
+      </div>
+
+      <!-- KARTU RINGKASAN TOTAL HUTANG -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="bg-rose-50 border border-rose-100 p-5 rounded-2xl flex items-center justify-between">
+          <div>
+            <p class="text-xs text-rose-600 font-bold uppercase tracking-wider">Total Seluruh Hutang</p>
+            <h3 id="textTotalSeluruhHutang" class="text-2xl font-black text-rose-700 mt-1">Rp 0</h3>
+          </div>
+          <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center text-xl font-bold">
+            💸
+          </div>
+        </div>
+        <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl flex items-center justify-between text-white">
+          <div>
+            <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Jumlah Pelanggan Berhutang</p>
+            <h3 id="textJumlahPelangganHutang" class="text-2xl font-black mt-1">0 Orang</h3>
+          </div>
+          <div class="w-12 h-12 bg-slate-700 text-amber-400 rounded-2xl flex items-center justify-center text-xl font-bold">
+            👥
+          </div>
+        </div>
+      </div>
+
+      <!-- LIST DAFTAR HUTANG PELANGGAN -->
+      <div id="containerListHutang" class="space-y-4">
+        <!-- Rincian daftar hutang per pelanggan akan dimuat di sini -->
+      </div>
+    </div>
+
     <!-- TAB MENU KOSONGAN -->
     <div id="tabKosongan" class="hidden space-y-6 max-w-4xl mx-auto">
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80">
@@ -440,7 +483,6 @@
             <input type="text" id="inputCatatanBayarKosongan" value="PELUNASAN KOSONGAN" 
                    class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none">
           </div>
-          <!-- Menggunakan type="button" untuk mencegah submit/trigger ganda -->
           <button type="button" onclick="prosesBayarKosonganMenu()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition">
             💾 Simpan Pembayaran Kosongan
           </button>
@@ -548,7 +590,6 @@
       <div class="text-center">
         <p>Jagapura Lor, <span id="printTglCetak"></span></p>
         <p class="mt-1">Pimpinan / Kasir</p>
-        <!-- Area Hasil Render Gambar Tanda Tangan Stylus -->
         <div id="printAreaTtdImg" class="my-2 h-16 flex items-center justify-center"></div>
         <p class="font-bold border-t border-black pt-1 inline-block min-w-[150px]" id="printNamaPimpinan">Pimpinan / Kasir</p>
       </div>
@@ -569,7 +610,6 @@
     let dataKosonganLengkapCache = [];
     let selectedPelangganKosonganData = null;
 
-    // Variabel untuk Stylus / Tanda Tangan Canvas
     let canvasTTD, ctxTTD;
     let isDrawing = false;
 
@@ -584,7 +624,6 @@
       if (!canvasTTD) return;
       ctxTTD = canvasTTD.getContext('2d');
       
-      // Menyesuaikan ukuran resolusi canvas agar tidak pecah
       canvasTTD.width = canvasTTD.offsetWidth || 300;
       canvasTTD.height = 90;
 
@@ -593,13 +632,11 @@
       ctxTTD.lineCap = 'round';
       ctxTTD.lineJoin = 'round';
 
-      // Event Listener Mouse
       canvasTTD.addEventListener('mousedown', mulaiGambar);
       canvasTTD.addEventListener('mousemove', prosesMenggambar);
       canvasTTD.addEventListener('mouseup', stopGambar);
       canvasTTD.addEventListener('mouseleave', stopGambar);
 
-      // Event Listener Touch (Stylus / Jari HP)
       canvasTTD.addEventListener('touchstart', (e) => {
         e.preventDefault();
         const touch = e.touches[0];
@@ -652,26 +689,30 @@
     function switchTab(tab) {
       const tabProfil = document.getElementById('tabProfil');
       const tabKasir = document.getElementById('tabKasir');
+      const tabHutang = document.getElementById('tabHutang');
       const tabKosongan = document.getElementById('tabKosongan');
       const tabRekap = document.getElementById('tabRekap');
       
       const btnProfil = document.getElementById('btnTabProfil');
       const btnKasir = document.getElementById('btnTabKasir');
+      const btnHutang = document.getElementById('btnTabHutang');
       const btnKosongan = document.getElementById('btnTabKosongan');
       const btnRekap = document.getElementById('btnTabRekap');
 
-      if ((tab === 'kasir' || tab === 'rekap' || tab === 'kosongan') && !isKasirUnlocked) {
+      if ((tab === 'kasir' || tab === 'rekap' || tab === 'kosongan' || tab === 'hutang') && !isKasirUnlocked) {
         bukaModalLogin();
         return;
       }
 
       tabProfil.classList.add('hidden');
       tabKasir.classList.add('hidden');
+      if (tabHutang) tabHutang.classList.add('hidden');
       if (tabKosongan) tabKosongan.classList.add('hidden');
       tabRekap.classList.add('hidden');
 
       btnProfil.className = "px-4 py-2 rounded-xl text-xs font-bold transition text-slate-600 hover:text-slate-900 whitespace-nowrap";
       btnKasir.className = "px-4 py-2 rounded-xl text-xs font-bold transition text-slate-600 hover:text-slate-900 whitespace-nowrap";
+      if (btnHutang) btnHutang.className = "px-4 py-2 rounded-xl text-xs font-bold transition text-slate-600 hover:text-slate-900 whitespace-nowrap";
       if (btnKosongan) btnKosongan.className = "px-4 py-2 rounded-xl text-xs font-bold transition text-slate-600 hover:text-slate-900 whitespace-nowrap";
       btnRekap.className = "px-4 py-2 rounded-xl text-xs font-bold transition text-slate-600 hover:text-slate-900 whitespace-nowrap";
 
@@ -682,6 +723,10 @@
         tabKasir.classList.remove('hidden');
         btnKasir.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-white text-emerald-800 shadow-sm border border-slate-200/60 whitespace-nowrap";
         muatDataPelanggan();
+      } else if (tab === 'hutang') {
+        if (tabHutang) tabHutang.classList.remove('hidden');
+        if (btnHutang) btnHutang.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-white text-emerald-800 shadow-sm border border-slate-200/60 whitespace-nowrap";
+        muatDataHutang();
       } else if (tab === 'kosongan') {
         if (tabKosongan) tabKosongan.classList.remove('hidden');
         if (btnKosongan) btnKosongan.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-white text-emerald-800 shadow-sm border border-slate-200/60 whitespace-nowrap";
@@ -773,6 +818,124 @@
           }
         })
         .catch(err => console.error("Gagal memuat pelanggan", err));
+    }
+
+    /* KONTROL & RENDER DAFTAR HUTANG */
+    function muatDataHutang() {
+      showLoading(true, "Menganalisis daftar hutang pelanggan...");
+      
+      fetch(`${API_URL}?action=getRekap`, { method: "GET", redirect: "follow" })
+        .then(res => res.json())
+        .then(res => {
+          showLoading(false);
+          if (res.success) {
+            cacheDataRekap = {
+              harian: Array.isArray(res.harian) ? res.harian : [],
+              bulanan: Array.isArray(res.bulanan) ? res.bulanan : [],
+              rekapPembeliBulanan: Array.isArray(res.rekapPembeliBulanan) ? res.rekapPembeliBulanan : []
+            };
+            isDataRekapLoaded = true;
+            renderDaftarHutang(cacheDataRekap.rekapPembeliBulanan);
+          } else {
+            alert("⚠️ Gagal memuat data hutang dari database.");
+          }
+        })
+        .catch(err => {
+          showLoading(false);
+          alert("⚠️ Terjadi kesalahan koneksi saat memuat data hutang.");
+        });
+    }
+
+    function renderDaftarHutang(dataPembeliBulanan) {
+      const container = document.getElementById('containerListHutang');
+      container.innerHTML = '';
+
+      // Hitung hutang akumulatif per pelanggan
+      let petaHutangPelanggan = {};
+
+      dataPembeliBulanan.forEach(pb => {
+        const nama = pb.pembeli;
+        if (!petaHutangPelanggan[nama]) {
+          petaHutangPelanggan[nama] = {
+            pembeli: nama,
+            totalSisaHutang: 0,
+            listTransaksiUtang: []
+          };
+        }
+
+        pb.listTransaksi.forEach(trx => {
+          if (trx.kembali < 0) {
+            petaHutangPelanggan[nama].totalSisaHutang += Math.abs(trx.kembali);
+            petaHutangPelanggan[nama].listTransaksiUtang.push(trx);
+          } else if (trx.items.includes("PELUNASAN UTANG")) {
+            petaHutangPelanggan[nama].totalSisaHutang -= Number(trx.bayar || 0);
+          }
+        });
+      });
+
+      // Filter hanya pelanggan dengan sisa hutang > 0
+      let daftarPelangganBerhutang = Object.values(petaHutangPelanggan).filter(p => p.totalSisaHutang > 0);
+
+      let totalSeluruhHutang = 0;
+      daftarPelangganBerhutang.forEach(p => { totalSeluruhHutang += p.totalSisaHutang; });
+
+      document.getElementById('textTotalSeluruhHutang').innerText = `Rp ${totalSeluruhHutang.toLocaleString('id-ID')}`;
+      document.getElementById('textJumlahPelangganHutang').innerText = `${daftarPelangganBerhutang.length} Orang`;
+
+      if (daftarPelangganBerhutang.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white p-8 rounded-2xl border text-center text-slate-400">
+            <span class="text-3xl block mb-2">🎉</span>
+            <p class="font-bold text-slate-700">Tidak ada pelanggan yang memiliki hutang!</p>
+            <p class="text-xs text-slate-400 mt-1">Semua transaksi & pembayaran pelanggan berada dalam status lunas.</p>
+          </div>
+        `;
+        return;
+      }
+
+      daftarPelangganBerhutang.forEach(p => {
+        let rincianTrxHtml = '';
+        p.listTransaksiUtang.forEach(trx => {
+          const nominalHutang = Math.abs(trx.kembali);
+          rincianTrxHtml += `
+            <div class="py-2 px-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center text-xs">
+              <div>
+                <span class="font-bold text-slate-700">📅 ${trx.tanggal} (${trx.waktu || '-'})</span>
+                <p class="text-slate-500 mt-0.5">🛒 ${trx.items}</p>
+              </div>
+              <span class="font-bold text-rose-600 bg-rose-50 px-2 py-1 rounded border border-rose-100">
+                Tunggakan: Rp ${nominalHutang.toLocaleString('id-ID')}
+              </span>
+            </div>
+          `;
+        });
+
+        container.innerHTML += `
+          <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <div class="p-4 sm:p-5 bg-rose-50/50 border-b border-rose-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div>
+                <h3 class="font-bold text-base text-slate-900 flex items-center gap-2">
+                  👤 ${p.pembeli}
+                </h3>
+                <p class="text-xs text-slate-500 mt-0.5">Total ${p.listTransaksiUtang.length} transaksi berhutang belum lunas</p>
+              </div>
+              <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                <div class="text-right">
+                  <span class="text-[10px] uppercase font-bold text-slate-400 block">Sisa Hutang Wajib Bayar</span>
+                  <span class="font-extrabold text-lg text-rose-600 block">Rp ${p.totalSisaHutang.toLocaleString('id-ID')}</span>
+                </div>
+                <button onclick="bukaModalBayarUtang('${p.pembeli}', ${p.totalSisaHutang})" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow-md">
+                  <span>💳</span> Bayar Utang
+                </button>
+              </div>
+            </div>
+            <div class="p-4 space-y-2">
+              <p class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Rincian Transaksi Tunggakan:</p>
+              ${rincianTrxHtml}
+            </div>
+          </div>
+        `;
+      });
     }
 
     function muatDataPelangganKosongan() {
@@ -890,7 +1053,6 @@
       document.getElementById('printTglCetak').innerText = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
       document.getElementById('printNamaPimpinan').innerText = document.getElementById('inputNamaPimpinan').value || 'Pimpinan / Kasir';
 
-      // Masukkan gambar TTD dari canvas ke area cetak
       const dataURL = canvasTTD.toDataURL();
       document.getElementById('printAreaTtdImg').innerHTML = `<img src="${dataURL}" style="max-height: 60px; width: auto; display: block; margin: 0 auto;" />`;
 
@@ -1796,6 +1958,7 @@
           cetakThermalPelunasanUtang(namaPembeli, sisaLama, nominalBayar, sisaAkhir);
         }
 
+        muatDataHutang();
         muatDataRekap();
       } catch (err) {
         showLoading(false);
@@ -1848,7 +2011,7 @@
 
       cetakText += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
       cetakText += GS + '(k' + '\x03\x00\x31\x43\x05';
-      cetakText += GS + '(k' + '\x03\x00\x31\x45\x30';
+      textPrint += GS + '(k' + '\x03\x00\x31\x45\x30';
       cetakText += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
       cetakText += GS + '(k' + '\x03\x00\x31\x51\x30';
       cetakText += "\n\n" + CUT;
@@ -1863,11 +2026,9 @@
     let infoWaktu = "";
     const tglCetak = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
-    // Helper untuk memformat rincian item ala termal (Nama Barang x QTY @Harga = Subtotal + Diskon + Catatan)
     function formatRincianTermal(t) {
       let htmlRincian = "";
       
-      // Jika data transaksi menyimpan array parsed items (seperti format termal)
       let parsedItems = t.itemsArray || (typeof t.items === 'object' ? t.items : null);
 
       if (Array.isArray(parsedItems) && parsedItems.length > 0) {
@@ -1891,11 +2052,9 @@
           htmlRincian += `</div>`;
         });
       } else {
-        // Fallback jika format data berupa string teks biasa
         htmlRincian = `<span>${t.items || '-'}</span>`;
       }
 
-      // Informasi Pembayaran ala Struk Termal (Tunai/Bayar, Kembalian/Hutang)
       let bayar = Number(t.bayar) || 0;
       let totalTrx = Number(t.total) || 0;
       let kembali = t.kembali !== undefined ? Number(t.kembali) : (bayar - totalTrx);
@@ -1939,371 +2098,36 @@
       tabelHtml = `
         <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
           <thead>
-            <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; font-size: 11px;">
-              <th style="padding: 6px; text-align: center; width: 35px;">No</th>
-              <th style="padding: 6px; text-align: left; width: 65px;">Waktu</th>
-              <th style="padding: 6px; text-align: left; width: 100px;">Pembeli</th>
-              <th style="padding: 6px; text-align: left;">Rincian Item & Pembayaran (Termal Style)</th>
-              <th style="padding: 6px; text-align: right; width: 90px;">Total</th>
+            <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; text-transform: uppercase; font-size: 11px;">
+              <th style="padding: 8px; text-align: center; width: 30px;">No</th>
+              <th style="padding: 8px; text-align: left; width: 60px;">Waktu</th>
+              <th style="padding: 8px; text-align: left; width: 120px;">Pembeli</th>
+              <th style="padding: 8px; text-align: left;">Rincian Item</th>
+              <th style="padding: 8px; text-align: right; width: 100px;">Total</th>
             </tr>
           </thead>
-          <tbody>${rows}</tbody>
-          <tfoot>
-            <tr style="background-color: #f8fafc; border-top: 2px solid #0f172a; font-weight: bold; font-size: 12px;">
-              <td colspan="4" style="padding: 8px; text-align: right;">TOTAL OMSET HARIAN :</td>
-              <td style="padding: 8px; text-align: right; color: #047857;">Rp ${item.totalOmset.toLocaleString('id-ID')}</td>
-            </tr>
-          </tfoot>
-        </table>`;
-    } else if (tipe === 'bulanan') {
-      const item = filteredDataRekapCache.bulanan[index];
-      if (!item) { alert("⚠️ Data rekap bulanan tidak ditemukan."); return; }
-      judul = `LAPORAN REKAPITULASI BULANAN - ${item.bulan}`;
-      infoWaktu = `Periode Bulan: ${item.bulan} | Total Pesanan: ${item.listTransaksi.length}`;
-
-      let rows = "";
-      item.listTransaksi.forEach((t, i) => {
-        rows += `
-          <tr style="border-bottom: 1px solid #cbd5e1; vertical-align: top;">
-            <td style="padding: 6px; text-align: center; font-size: 11px;">${i + 1}</td>
-            <td style="padding: 6px; font-size: 11px; white-space: nowrap;">${t.tanggal}</td>
-            <td style="padding: 6px; font-size: 11px; font-weight: 500;">${t.pembeli}</td>
-            <td style="padding: 6px; font-size: 11px;">${formatRincianTermal(t)}</td>
-            <td style="padding: 6px; text-align: right; font-size: 11px; font-weight: bold; white-space: nowrap;">Rp ${Number(t.total).toLocaleString('id-ID')}</td>
-          </tr>`;
-      });
-      tabelHtml = `
-        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-          <thead>
-            <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; font-size: 11px;">
-              <th style="padding: 6px; text-align: center; width: 35px;">No</th>
-              <th style="padding: 6px; text-align: left; width: 80px;">Tanggal</th>
-              <th style="padding: 6px; text-align: left; width: 100px;">Pembeli</th>
-              <th style="padding: 6px; text-align: left;">Rincian Item & Pembayaran (Termal Style)</th>
-              <th style="padding: 6px; text-align: right; width: 90px;">Total</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-          <tfoot>
-            <tr style="background-color: #f8fafc; border-top: 2px solid #0f172a; font-weight: bold; font-size: 12px;">
-              <td colspan="4" style="padding: 8px; text-align: right;">TOTAL OMSET BULANAN :</td>
-              <td style="padding: 8px; text-align: right; color: #047857;">Rp ${item.totalOmset.toLocaleString('id-ID')}</td>
-            </tr>
-          </tfoot>
-        </table>`;
-    } else if (tipe === 'pembeli') {
-      const item = filteredDataRekapCache.rekapPembeliBulanan[index];
-      if (!item) { alert("⚠️ Data rekap pembeli tidak ditemukan."); return; }
-      judul = `REKAP TRANSAKSI PELANGGAN: ${item.pembeli.toUpperCase()}`;
-      infoWaktu = `Bulan: ${item.bulan} | Total Belanja: Rp ${item.totalBelanja.toLocaleString('id-ID')}`;
-
-      let rows = "";
-      item.listTransaksi.forEach((t, i) => {
-        rows += `
-          <tr style="border-bottom: 1px solid #cbd5e1; vertical-align: top;">
-            <td style="padding: 6px; text-align: center; font-size: 11px;">${i + 1}</td>
-            <td style="padding: 6px; font-size: 11px; white-space: nowrap;">${t.tanggal} <br/><small style="color: #64748b;">${t.waktu || '-'}</small></td>
-            <td style="padding: 6px; font-size: 11px;">${formatRincianTermal(t)}</td>
-            <td style="padding: 6px; text-align: right; font-size: 11px; white-space: nowrap;">Rp ${Number(t.bayar || 0).toLocaleString('id-ID')}</td>
-            <td style="padding: 6px; text-align: right; font-size: 11px; font-weight: bold; white-space: nowrap;">Rp ${Number(t.total).toLocaleString('id-ID')}</td>
-          </tr>`;
-      });
-      tabelHtml = `
-        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-          <thead>
-            <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; font-size: 11px;">
-              <th style="padding: 6px; text-align: center; width: 35px;">No</th>
-              <th style="padding: 6px; text-align: left; width: 110px;">Waktu</th>
-              <th style="padding: 6px; text-align: left;">Rincian Item & Catatan (Termal Style)</th>
-              <th style="padding: 6px; text-align: right; width: 85px;">Bayar</th>
-              <th style="padding: 6px; text-align: right; width: 90px;">Total</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-          <tfoot>
-            <tr style="background-color: #f8fafc; border-top: 2px solid #0f172a; font-weight: bold; font-size: 12px;">
-              <td colspan="4" style="padding: 8px; text-align: right;">TOTAL BELANJA & PEMBAYARAN :</td>
-              <td style="padding: 8px; text-align: right; color: #047857;">Rp ${item.totalBelanja.toLocaleString('id-ID')}</td>
-            </tr>
-          </tfoot>
-        </table>`;
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+        <div style="margin-top: 12px; font-size: 12px; font-weight: bold; text-align: right;">
+          Total Omset Harian: Rp ${Number(item.totalOmset).toLocaleString('id-ID')}
+        </div>
+      `;
     }
 
     document.getElementById('printJudulLaporan').innerText = judul;
     document.getElementById('printInfoWaktu').innerText = infoWaktu;
     document.getElementById('printTglCetak').innerText = tglCetak;
     document.getElementById('printNamaPimpinan').innerText = document.getElementById('inputNamaPimpinan').value || 'Pimpinan / Kasir';
-    
+
     const dataURL = canvasTTD.toDataURL();
     document.getElementById('printAreaTtdImg').innerHTML = `<img src="${dataURL}" style="max-height: 60px; width: auto; display: block; margin: 0 auto;" />`;
-    document.getElementById('printKontenTabel').innerHTML = tabelHtml;
 
-    setTimeout(() => window.print(), 350);
+    document.getElementById('printKontenTabel').innerHTML = tabelHtml;
+    setTimeout(() => window.print(), 300);
   });
 }
-    
-    let bluetoothDevice = null;
-    let bluetoothCharacteristic = null;
-
-    async function konekPrinterBluetooth() {
-      try {
-        showLoading(true, "Mencari Printer Bluetooth...");
-        bluetoothDevice = await navigator.bluetooth.requestDevice({
-          acceptAllDevices: true,
-          optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
-        });
-
-        const server = await bluetoothDevice.gatt.connect();
-        const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
-        bluetoothCharacteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
-        
-        showLoading(false);
-        alert("✅ Printer Bluetooth Berhasil Terhubung!");
-      } catch (error) {
-        showLoading(false);
-        alert("⚠️ Gagal terhubung ke printer.");
-      }
-    }
-
-    async function kirimDataRawKePrinter(cetakText) {
-      if (!bluetoothCharacteristic) {
-        await konekPrinterBluetooth();
-        if (!bluetoothCharacteristic) return;
-      }
-
-      try {
-        showLoading(true, "Mengirim data ke Thermal...");
-        const encoder = new TextEncoder();
-        const dataBytes = encoder.encode(cetakText);
-        
-        const CHUNK_SIZE = 64; 
-        for (let i = 0; i < dataBytes.length; i += CHUNK_SIZE) {
-          const chunk = dataBytes.slice(i, i + CHUNK_SIZE);
-          await bluetoothCharacteristic.writeValue(chunk);
-          await new Promise(resolve => setTimeout(resolve, 80)); 
-        }
-        showLoading(false);
-      } catch (error) {
-        showLoading(false);
-        alert("⚠️ Gagal mengirim data. Pastikan printer menyala & terhubung kembali.");
-        bluetoothCharacteristic = null;
-      }
-    }
-
-    async function cetakLangsungThermal(namaPembeli, pelayan, total, bayar, selisih, catatanKosongan) {
-      const ESC = '\x1B';
-      const GS = '\x1D';
-      const INIT = ESC + '@';
-      const CENTER = ESC + 'a' + '\x01';
-      const LEFT = ESC + 'a' + '\x00';
-      const BOLD_ON = ESC + 'E' + '\x01';
-      const BOLD_OFF = ESC + 'E' + '\x00';
-      const CUT = GS + 'V' + '\x41' + '\x03';
-
-      let cetakText = INIT;
-      cetakText += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
-      cetakText += "Jl. Raya Jagapura Lor - Nyibanda\n";
-      cetakText += "Solusi Kebutuhan Anda\n";
-      cetakText += "--------------------------------\n"; 
-      cetakText += LEFT;
-      cetakText += `Pelanggan : ${namaPembeli}\n`;
-      if (pelayan) {
-        cetakText += `Pelayan   : ${pelayan}\n`;
-      }
-      cetakText += `Tanggal   : ${new Date().toLocaleString('id-ID')}\n`;
-      if (catatanKosongan) {
-        cetakText += `Catatan   : ${catatanKosongan}\n`;
-      }
-      cetakText += "--------------------------------\n";
-
-      keranjang.forEach(item => {
-        let sub = item.harga * item.qty;
-        cetakText += `${item.nama}\n`;
-        cetakText += `  ${item.qty} x ${item.harga.toLocaleString('id-ID')} = Rp ${sub.toLocaleString('id-ID')}\n`;
-      });
-
-      cetakText += "--------------------------------\n";
-      cetakText += `TOTAL     : Rp ${total.toLocaleString('id-ID')}\n`;
-      cetakText += `BAYAR     : Rp ${bayar.toLocaleString('id-ID')}\n`;
-
-      if (selisih >= 0) {
-        cetakText += `KEMBALI   : Rp ${selisih.toLocaleString('id-ID')}\n`;
-      } else {
-        cetakText += BOLD_ON + `HUTANG    : Rp ${Math.abs(selisih).toLocaleString('id-ID')}\n` + BOLD_OFF;
-      }
-
-      cetakText += "--------------------------------\n";
-      cetakText += CENTER + "*** TERIMA KASIH ***\n\n";
-
-      cetakText += CENTER + "Kunjungi Situs Kami\n";
-      cetakText += CENTER + "Scann QR Kode Dibawah ini\n\n";
-      const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
-      const storeLength = qrUrl.length + 3;
-      const pL = String.fromCharCode(storeLength % 256);
-      const pH = String.fromCharCode(Math.floor(storeLength / 256));
-
-      cetakText += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
-      cetakText += GS + '(k' + '\x03\x00\x31\x43\x05';
-      cetakText += GS + '(k' + '\x03\x00\x31\x45\x30';
-      cetakText += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
-      cetakText += GS + '(k' + '\x03\x00\x31\x51\x30';
-      cetakText += "\n\n" + CUT;
-
-      await kirimDataRawKePrinter(cetakText);
-    }
-
-    async function cetakBluetoothHarian(index) {
-      const sourceArray = (filteredDataRekapCache.harian && filteredDataRekapCache.harian.length > 0) ? filteredDataRekapCache.harian : cacheDataRekap.harian;
-      const dataObj = sourceArray[index];
-      if (!dataObj) return;
-      await cetakThermalRekapUmum(`REKAP HARIAN: ${dataObj.tanggal}`, `Tanggal: ${dataObj.tanggal}`, dataObj.listTransaksi);
-    }
-
-    async function cetakBluetoothBulanan(index) {
-      const sourceArray = (filteredDataRekapCache.bulanan && filteredDataRekapCache.bulanan.length > 0) ? filteredDataRekapCache.bulanan : cacheDataRekap.bulanan;
-      const dataObj = sourceArray[index];
-      if (!dataObj) return;
-      await cetakThermalRekapUmum(`REKAP BULANAN: ${dataObj.bulan}`, `Bulan: ${dataObj.bulan}`, dataObj.listTransaksi);
-    }
-
-    async function cetakBluetoothPembeli(index) {
-      const sourceArray = (filteredDataRekapCache.rekapPembeliBulanan && filteredDataRekapCache.rekapPembeliBulanan.length > 0) ? filteredDataRekapCache.rekapPembeliBulanan : cacheDataRekap.rekapPembeliBulanan;
-      const dataObj = sourceArray[index];
-      if (!dataObj) return;
-
-      const ESC = '\x1B';
-      const GS = '\x1D';
-      const INIT = ESC + '@';
-      const CENTER = ESC + 'a' + '\x01';
-      const LEFT = ESC + 'a' + '\x00';
-      const BOLD_ON = ESC + 'E' + '\x01';
-      const BOLD_OFF = ESC + 'E' + '\x00';
-      const CUT = GS + 'V' + '\x41' + '\x03';
-
-      let cetakText = INIT;
-      cetakText += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
-      cetakText += "Jl. Raya Jagapura Lor - Nyibanda\n";
-      cetakText += `REKAP PEMBELI: ${dataObj.pembeli.toUpperCase()}\n`;
-      cetakText += "--------------------------------\n";
-      cetakText += LEFT;
-      cetakText += `Periode : ${dataObj.bulan}\n`;
-      cetakText += `Cetak   : ${new Date().toLocaleString('id-ID')}\n`;
-      cetakText += "--------------------------------\n";
-
-      let grandTotalBelanja = 0;
-      let grandTotalBayar = 0;
-      let grandTotalHutangPiutang = 0;
-
-      dataObj.listTransaksi.forEach((trx, i) => {
-        grandTotalBelanja += Number(trx.total);
-        grandTotalBayar += Number(trx.bayar);
-        grandTotalHutangPiutang += Number(trx.kembali);
-
-        cetakText += `${i + 1}. Tgl: ${trx.tanggal || ''} ${trx.waktu || ''}\n`;
-        cetakText += `   Item: ${trx.items}\n`;
-        cetakText += `   Total : Rp ${Number(trx.total).toLocaleString('id-ID')}\n`;
-        cetakText += `   Bayar : Rp ${Number(trx.bayar).toLocaleString('id-ID')}\n`;
-        
-        if (trx.kembali >= 0) {
-          cetakText += `   Kembali: Rp ${trx.kembali.toLocaleString('id-ID')}\n`;
-        } else {
-          cetakText += `   Hutang : Rp ${Math.abs(trx.kembali).toLocaleString('id-ID')}\n`;
-        }
-        cetakText += "--------------------------------\n";
-      });
-
-      cetakText += BOLD_ON;
-      cetakText += `TOTAL BELANJA : Rp ${grandTotalBelanja.toLocaleString('id-ID')}\n`;
-      cetakText += `TOTAL BAYAR   : Rp ${grandTotalBayar.toLocaleString('id-ID')}\n`;
-      cetakText += "--------------------------------\n";
-
-      if (grandTotalHutangPiutang < 0) {
-        cetakText += `SISA HUTANG   : Rp ${Math.abs(grandTotalHutangPiutang).toLocaleString('id-ID')}\n`;
-      } else {
-        cetakText += `STATUS        : LUNAS / LEBIH\n`;
-      }
-      cetakText += BOLD_OFF + "--------------------------------\n";
-      cetakText += CENTER + "*** RINCIAN TRANSAKSI ***\n\n";
-
-      cetakText += CENTER + "Kunjungi Situs Kami\n";
-      cetakText += CENTER + "Scann QR Kode Dibawah ini\n\n";
-      const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
-      const storeLength = qrUrl.length + 3;
-      const pL = String.fromCharCode(storeLength % 256);
-      const pH = String.fromCharCode(Math.floor(storeLength / 256));
-
-      cetakText += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
-      cetakText += GS + '(k' + '\x03\x00\x31\x43\x05';
-      cetakText += GS + '(k' + '\x03\x00\x31\x45\x30';
-      cetakText += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
-      cetakText += GS + '(k' + '\x03\x00\x31\x51\x30';
-      cetakText += "\n\n" + CUT;
-
-      await kirimDataRawKePrinter(cetakText);
-    }
-
-    async function cetakThermalRekapUmum(judulLaporan, infoPeriode, listTransaksi) {
-      const ESC = '\x1B';
-      const GS = '\x1D';
-      const INIT = ESC + '@';
-      const CENTER = ESC + 'a' + '\x01';
-      const LEFT = ESC + 'a' + '\x00';
-      const BOLD_ON = ESC + 'E' + '\x01';
-      const BOLD_OFF = ESC + 'E' + '\x00';
-      const CUT = GS + 'V' + '\x41' + '\x03';
-
-      let cetakText = INIT;
-      cetakText += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
-      cetakText += "Jl. Raya Jagapura Lor - Nyibanda\n";
-      cetakText += `${judulLaporan}\n`;
-      cetakText += "--------------------------------\n";
-      cetakText += LEFT;
-      cetakText += `${infoPeriode}\n`;
-      cetakText += `Cetak : ${new Date().toLocaleString('id-ID')}\n`;
-      cetakText += "--------------------------------\n";
-
-      let grandTotalOmset = 0;
-      let grandTotalBayar = 0;
-      let grandTotalHutang = 0;
-
-      listTransaksi.forEach((trx, i) => {
-        grandTotalOmset += Number(trx.total);
-        let bayarTrx = Number(trx.bayar || 0);
-        grandTotalBayar += bayarTrx;
-        
-        let kembaliHutangTrx = Number(trx.kembali || (bayarTrx - trx.total));
-        if (kembaliHutangTrx < 0) {
-          grandTotalHutang += Math.abs(kembaliHutangTrx);
-        }
-
-        cetakText += `${i + 1}. ${trx.tanggal || ''} ${trx.waktu || ''}\n`;
-        cetakText += `   👤 ${trx.pembeli}\n`;
-        cetakText += `   🛒 ${trx.items}\n`;
-        cetakText += `   Total: Rp ${Number(trx.total).toLocaleString('id-ID')}\n`;
-        cetakText += "--------------------------------\n";
-      });
-
-      cetakText += BOLD_ON;
-      cetakText += `TOTAL KESELURUHAN: Rp ${grandTotalOmset.toLocaleString('id-ID')}\n`;
-      cetakText += BOLD_OFF + "--------------------------------\n";
-      cetakText += CENTER + "*** TERIMA KASIH ***\n\n";
-
-      cetakText += CENTER + "Kunjungi Situs Kami\n";
-      cetakText += CENTER + "Scann QR Kode Dibawah ini\n\n";
-      const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
-      const storeLength = qrUrl.length + 3;
-      const pL = String.fromCharCode(storeLength % 256);
-      const pH = String.fromCharCode(Math.floor(storeLength / 256));
-
-      cetakText += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
-      cetakText += GS + '(k' + '\x03\x00\x31\x43\x05';
-      cetakText += GS + '(k' + '\x03\x00\x31\x45\x30';
-      cetakText += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
-      cetakText += GS + '(k' + '\x03\x00\x31\x51\x30';
-      cetakText += "\n\n" + CUT;
-
-      await kirimDataRawKePrinter(cetakText);
-    }
   </script>
 </body>
 </html>
