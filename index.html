@@ -173,7 +173,7 @@
           📌 Daftar Hutang 🔒
         </button>
         <button id="btnTabKosongan" onclick="switchTab('kosongan')" class="px-4 py-2 rounded-xl text-xs font-bold transition text-slate-600 hover:text-slate-900 whitespace-nowrap">
-          🔄 Menu Kosongan 🔒
+          🔄 Daftar Kosongan 🔒
         </button>
         <button id="btnTabRekap" onclick="switchTab('rekap')" class="px-4 py-2 rounded-xl text-xs font-bold transition text-slate-600 hover:text-slate-900 whitespace-nowrap">
           📊 Rekap Transaksi 🔒
@@ -385,7 +385,7 @@
     <div id="tabHutang" class="hidden space-y-6 max-w-5xl mx-auto">
       <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 class="text-lg font-bold text-slate-800">📌 Daftar Hutang / Piutang Pelanggan</h2>
+          <h2 class="text-lg font-bold text-slate-800">📌 Daftar Hutang Pelanggan</h2>
           <p class="text-xs text-slate-500">Ringkasan seluruh pelanggan yang masih memiliki tunggakan/sisa hutang pembayaran.</p>
         </div>
         <button onclick="muatDataHutang()" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-2 shadow-sm">
@@ -427,7 +427,7 @@
         <div class="flex justify-between items-center border-b border-slate-100 pb-4 mb-5">
           <div class="flex items-center gap-2">
             <span class="text-lg">🔄</span>
-            <h2 class="text-base font-bold text-slate-800">Manajemen Status & Pembayaran Kosongan</h2>
+            <h2 class="text-base font-bold text-slate-800">Manajemen Status Kosongan</h2>
           </div>
           <button onclick="muatDataPelangganKosongan()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">
             🔄 Refresh Data
@@ -494,7 +494,7 @@
     <div id="tabRekap" class="hidden space-y-6 max-w-5xl mx-auto">
       <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 class="text-lg font-bold text-slate-800">📊 Rekapitulasi Omset & Transaksi</h2>
+          <h2 class="text-lg font-bold text-slate-800">📊 Data Rekap Transaksi</h2>
           <p class="text-xs text-slate-500">Laporan omset harian, bulanan, dan rekap khusus per pembeli per bulan.</p>
         </div>
         <button onclick="muatDataRekap()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-2 shadow-sm">
@@ -508,7 +508,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">Nama Pimpinan / Kasir yang Bertandatangan</label>
-            <input type="text" id="inputNamaPimpinan" placeholder="Contoh: Bpk. H. Ahmad / Azizah" value="Pimpinan / Kasir" 
+            <input type="text" id="inputNamaPimpinan" placeholder="Contoh: Bpk. H. Ahmad / Azizah" value="" 
                    class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
           </div>
           <div>
@@ -581,8 +581,8 @@
     <div class="text-center pb-4 mb-4 border-b-2 border-black flex flex-col items-center gap-2">
       <img src="https://i.ibb.co.com/W4nh9Xrq/Gemini-Generated-Image-aqnsksaqnsksaqns-removebg-preview.png" alt="Logo" class="h-16 w-auto object-contain mb-1">
       <h1 class="text-xl font-black tracking-wide uppercase">LANANG 2 BAHAGIA</h1>
-      <p class="text-xs">Jl. Raya Jagapura Lor Blok Nyibanda — Solusi Kebutuhan Rumah Anda</p>
-      <h2 id="printJudulLaporan" class="text-sm font-bold uppercase mt-3">LAPORAN REKAPITULASI TRANSAKSI</h2>
+      <p class="text-xs">Jl. Raya Jagapura Lor Blok Nyibanda — Solusi Kebutuhan Anda</p>
+      <h2 id="printJudulLaporan" class="text-sm font-bold uppercase mt-3">DATA REKAPITULASI TRANSAKSI</h2>
       <p id="printInfoWaktu" class="text-xs text-slate-600 mt-0.5"></p>
     </div>
     <div id="printKontenTabel"></div>
