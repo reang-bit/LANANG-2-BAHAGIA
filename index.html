@@ -592,29 +592,14 @@
       </div>
 
       <div id="kontenRekapHarian" class="space-y-4">
-        <div class="flex justify-end">
-          <button onclick="pastikanDataRekapSiap(() => cetakLaporanRekapUmum('harian'))" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow">
-            <span>🖨️</span> Cetak Rekap Harian
-          </button>
-        </div>
         <div id="listRekapHarian" class="space-y-4"></div>
       </div>
 
       <div id="kontenRekapBulanan" class="space-y-4 hidden">
-        <div class="flex justify-end">
-          <button onclick="pastikanDataRekapSiap(() => cetakLaporanRekapUmum('bulanan'))" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow">
-            <span>🖨️</span> Cetak Rekap Bulanan
-          </button>
-        </div>
         <div id="listRekapBulanan" class="space-y-4"></div>
       </div>
 
       <div id="kontenRekapPembeli" class="space-y-4 hidden">
-        <div class="flex justify-end">
-          <button onclick="pastikanDataRekapSiap(() => cetakLaporanRekapUmum('pembeli'))" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow">
-            <span>🖨️</span> Cetak Rekap Per Pembeli
-          </button>
-        </div>
         <div id="listRekapPembeli" class="space-y-4"></div>
       </div>
     </div>
@@ -2142,401 +2127,532 @@
         rekapPembeliBulanan: filteredPembeli
       };
 
-      renderRekapHarian(filteredHarian);
-      renderRekapBulanan(filteredBulanan);
-      renderRekapPembeliBulanan(filteredPembeli);
+      renderListHarian(filteredDataRekapCache.harian);
+      renderListBulanan(filteredDataRekapCache.bulanan);
+      renderListPembeli(filteredDataRekapCache.rekapPembeliBulanan);
     }
 
-    function pastikanDataRekapSiap(callback) {
-      if (!isDataRekapLoaded || !cacheDataRekap || cacheDataRekap.harian.length === 0) {
-        showLoading(true, "Memuat data rekap otomatis...");
-        fetch(`${API_URL}?action=getRekap`, { method: "GET", redirect: "follow" })
-          .then(res => res.json())
-          .then(res => {
-            showLoading(false);
-            if (res.success) {
-              cacheDataRekap = {
-                harian: Array.isArray(res.harian) ? res.harian : [],
-                bulanan: Array.isArray(res.bulanan) ? res.bulanan : [],
-                rekapPembeliBulanan: Array.isArray(res.rekapPembeliBulanan) ? res.rekapPembeliBulanan : []
-              };
-              isDataRekapLoaded = true;
-              terapkanFilterRekap();
-              callback();
-            } else {
-              alert("⚠️ Data rekap belum lengkap atau tidak ditemukan. Silakan klik tombol 'Refresh Rekap' terlebih dahulu.");
-            }
-          })
-          .catch(err => {
-            showLoading(false);
-            alert("⚠️ Koneksi gagal. Pastikan terhubung internet.");
-          });
-      } else {
-        callback();
-      }
-    }
-    
-    function renderRekapHarian(dataHarian) {
+    function renderListHarian(dataHarian) {
       const container = document.getElementById('listRekapHarian');
       container.innerHTML = '';
 
-      if (!dataHarian || dataHarian.length === 0) {
-        container.innerHTML = `<div class="bg-white p-6 rounded-2xl border text-center text-slate-400 text-xs">Tidak ada data transaksi harian yang sesuai filter.</div>`;
+      if (dataHarian.length === 0) {
+        container.innerHTML = `<div class="bg-white p-6 rounded-2xl border text-center text-slate-400 text-xs">Tidak ada data transaksi harian.</div>`;
         return;
       }
 
       dataHarian.forEach((h, index) => {
-        let listHtml = '';
-        h.listTransaksi.forEach(trx => {
-          let statusBayarHtml = "";
-          if (trx.kembali >= 0) {
-            statusBayarHtml = `<span class="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">Kembali: Rp ${trx.kembali.toLocaleString('id-ID')}</span>`;
-          } else {
-            statusBayarHtml = `<span class="text-[10px] text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded border border-emerald-100">Hutang: Rp ${Math.abs(trx.kembali).toLocaleString('id-ID')}</span>`;
-          }
-
-          listHtml += `
-            <div class="py-2.5 px-3 bg-slate-50 rounded-xl border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-              <div>
-                <div class="flex items-center gap-2 flex-wrap">
-                  <span class="font-bold text-xs text-slate-800">👤 ${trx.pembeli}</span>
-                  <span class="text-[10px] text-slate-400 bg-white px-2 py-0.5 rounded border">⏰ ${trx.waktu}</span>
-                  ${statusBayarHtml}
-                </div>
-                <p class="text-xs text-slate-600 mt-1">🛒 <strong>Items:</strong> ${trx.items}</p>
-              </div>
-              <div class="flex items-center gap-3">
-                <span class="font-extrabold text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
-                  Rp ${trx.total.toLocaleString('id-ID')}
-                </span>
-                <button onclick="hapusTransaksiSheet(${trx.rowIndex}, '${trx.pembeli}')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-[10px] font-bold transition border border-rose-200" title="Hapus Transaksi">
-                  🗑️ Hapus
-                </button>
-              </div>
-            </div>
+        let rowsTrx = '';
+        h.listTransaksi.forEach((t, i) => {
+          rowsTrx += `
+            <tr class="hover:bg-slate-50 transition">
+              <td class="py-2.5 px-4 font-semibold text-slate-700">${t.waktu || '-'}</td>
+              <td class="py-2.5 px-4 font-bold text-slate-800">${t.pembeli}</td>
+              <td class="py-2.5 px-4 text-slate-600">${t.items}</td>
+              <td class="py-2.5 px-4 text-right font-bold text-slate-900">Rp ${Number(t.total).toLocaleString('id-ID')}</td>
+              <td class="py-2.5 px-4 text-right text-slate-600">Rp ${Number(t.bayar).toLocaleString('id-ID')}</td>
+              <td class="py-2.5 px-4 text-right font-bold ${t.kembali >= 0 ? 'text-emerald-600' : 'text-rose-600'}">
+                ${t.kembali >= 0 ? 'Rp ' + Number(t.kembali).toLocaleString('id-ID') : 'HUTANG Rp ' + Math.abs(t.kembali).toLocaleString('id-ID')}
+              </td>
+            </tr>
           `;
         });
 
         container.innerHTML += `
           <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-            <div class="bg-slate-100/70 p-4 border-b border-slate-200/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div class="p-4 sm:p-5 bg-slate-50 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-                <h3 class="font-bold text-sm text-slate-800">📅 Tanggal: ${h.tanggal}</h3>
-                <p class="text-[11px] text-slate-500 font-medium">Total Transaksi: ${h.listTransaksi.length} pesanan</p>
+                <h3 class="font-bold text-base text-slate-800">📅 Tanggal: ${h.tanggal}</h3>
+                <p class="text-xs text-slate-500 mt-0.5">Total ${h.listTransaksi.length} Transaksi Selesai</p>
               </div>
-              <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
+              <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                 <div class="text-right">
-                  <span class="text-[10px] uppercase font-bold text-slate-400 block">Omset Harian</span>
-                  <span class="font-black text-sm text-emerald-700">Rp ${h.totalOmset.toLocaleString('id-ID')}</span>
+                  <span class="text-[10px] uppercase font-bold text-slate-400 block">Total Omset</span>
+                  <span class="font-black text-lg text-emerald-700 block">Rp ${Number(h.totalOmset).toLocaleString('id-ID')}</span>
+                </div>
+                <div class="flex gap-1.5">
+                  <button onclick="cetakRekapHarian(${index})" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1 shadow">
+                    <span>🖨️</span> Print
+                  </button>
+                  <button onclick="cetakThermalRekapHarian(${index})" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1 shadow">
+                    <span>🦷</span> Thermal
+                  </button>
                 </div>
               </div>
             </div>
-            <div class="p-4 space-y-2">
-              ${listHtml}
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-100/60 text-slate-500 font-semibold border-b border-slate-100">
+                    <th class="py-2.5 px-4">Waktu</th>
+                    <th class="py-2.5 px-4">Pembeli</th>
+                    <th class="py-2.5 px-4">Rincian Item</th>
+                    <th class="py-2.5 px-4 text-right">Total</th>
+                    <th class="py-2.5 px-4 text-right">Bayar</th>
+                    <th class="py-2.5 px-4 text-right">Kembali/Hutang</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  ${rowsTrx}
+                </tbody>
+              </table>
             </div>
           </div>
         `;
       });
     }
 
-    function renderRekapBulanan(dataBulanan) {
+    function renderListBulanan(dataBulanan) {
       const container = document.getElementById('listRekapBulanan');
       container.innerHTML = '';
 
-      if (!dataBulanan || dataBulanan.length === 0) {
-        container.innerHTML = `<div class="bg-white p-6 rounded-2xl border text-center text-slate-400 text-xs">Tidak ada data transaksi bulanan yang sesuai filter.</div>`;
+      if (dataBulanan.length === 0) {
+        container.innerHTML = `<div class="bg-white p-6 rounded-2xl border text-center text-slate-400 text-xs">Tidak ada data rekap bulanan.</div>`;
         return;
       }
 
       dataBulanan.forEach((b, index) => {
-        let listHtml = '';
-        b.listTransaksi.forEach(trx => {
-          listHtml += `
-            <div class="py-2.5 px-3 bg-slate-50 rounded-xl border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-              <div>
-                <div class="flex items-center gap-2 flex-wrap">
-                  <span class="font-bold text-xs text-slate-800">👤 ${trx.pembeli}</span>
-                  <span class="text-[10px] text-slate-400 bg-white px-2 py-0.5 rounded border">📅 ${trx.tanggal}</span>
-                </div>
-                <p class="text-xs text-slate-600 mt-1">🛒 <strong>Items:</strong> ${trx.items}</p>
-              </div>
-              <span class="font-extrabold text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
-                Rp ${trx.total.toLocaleString('id-ID')}
-              </span>
-            </div>
+        let rowsTrx = '';
+        b.listTransaksi.forEach((t) => {
+          rowsTrx += `
+            <tr class="hover:bg-slate-50 transition">
+              <td class="py-2.5 px-4 font-semibold text-slate-700">${t.tanggal || '-'}</td>
+              <td class="py-2.5 px-4 font-bold text-slate-800">${t.pembeli}</td>
+              <td class="py-2.5 px-4 text-slate-600">${t.items}</td>
+              <td class="py-2.5 px-4 text-right font-bold text-slate-900">Rp ${Number(t.total).toLocaleString('id-ID')}</td>
+              <td class="py-2.5 px-4 text-right text-slate-600">Rp ${Number(t.bayar).toLocaleString('id-ID')}</td>
+              <td class="py-2.5 px-4 text-right font-bold ${t.kembali >= 0 ? 'text-emerald-600' : 'text-rose-600'}">
+                ${t.kembali >= 0 ? 'Rp ' + Number(t.kembali).toLocaleString('id-ID') : 'HUTANG Rp ' + Math.abs(t.kembali).toLocaleString('id-ID')}
+              </td>
+            </tr>
           `;
         });
 
         container.innerHTML += `
           <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-            <div class="bg-slate-100/70 p-4 border-b border-slate-200/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div class="p-4 sm:p-5 bg-slate-50 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-                <h3 class="font-bold text-sm text-slate-800">🗓️ Bulan: ${b.bulan}</h3>
-                <p class="text-[11px] text-slate-500 font-medium">Total Pesanan: ${b.listTransaksi.length} transaksi</p>
+                <h3 class="font-bold text-base text-slate-800">🗓️ Bulan: ${b.bulan}</h3>
+                <p class="text-xs text-slate-500 mt-0.5">Total ${b.listTransaksi.length} Transaksi</p>
               </div>
-              <div class="text-right">
-                <span class="text-[10px] uppercase font-bold text-slate-400 block">Omset Bulanan</span>
-                <span class="font-black text-sm text-emerald-700">Rp ${b.totalOmset.toLocaleString('id-ID')}</span>
+              <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                <div class="text-right">
+                  <span class="text-[10px] uppercase font-bold text-slate-400 block">Total Omset Bulan Ini</span>
+                  <span class="font-black text-lg text-emerald-700 block">Rp ${Number(b.totalOmset).toLocaleString('id-ID')}</span>
+                </div>
+                <div class="flex gap-1.5">
+                  <button onclick="cetakRekapBulanan(${index})" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1 shadow">
+                    <span>🖨️</span> Print
+                  </button>
+                  <button onclick="cetakThermalRekapBulanan(${index})" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1 shadow">
+                    <span>🦷</span> Thermal
+                  </button>
+                </div>
               </div>
             </div>
-            <div class="p-4 space-y-2">
-              ${listHtml}
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-100/60 text-slate-500 font-semibold border-b border-slate-100">
+                    <th class="py-2.5 px-4">Tanggal</th>
+                    <th class="py-2.5 px-4">Pembeli</th>
+                    <th class="py-2.5 px-4">Rincian Item</th>
+                    <th class="py-2.5 px-4 text-right">Total</th>
+                    <th class="py-2.5 px-4 text-right">Bayar</th>
+                    <th class="py-2.5 px-4 text-right">Kembali/Hutang</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  ${rowsTrx}
+                </tbody>
+              </table>
             </div>
           </div>
         `;
       });
     }
 
-    function renderRekapPembeliBulanan(dataPembeli) {
+    function renderListPembeli(dataPembeli) {
       const container = document.getElementById('listRekapPembeli');
       container.innerHTML = '';
 
-      if (!dataPembeli || dataPembeli.length === 0) {
-        container.innerHTML = `<div class="bg-white p-6 rounded-2xl border text-center text-slate-400 text-xs">Tidak ada data rekap pembeli yang sesuai filter.</div>`;
+      if (dataPembeli.length === 0) {
+        container.innerHTML = `<div class="bg-white p-6 rounded-2xl border text-center text-slate-400 text-xs">Tidak ada data rekap per pembeli.</div>`;
         return;
       }
 
       dataPembeli.forEach((pb, index) => {
-        let listHtml = '';
-        pb.listTransaksi.forEach(trx => {
-          listHtml += `
-            <div class="py-2.5 px-3 bg-slate-50 rounded-xl border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-              <div>
-                <span class="font-bold text-xs text-slate-800">📅 ${trx.tanggal} (${trx.waktu || '-'})</span>
-                <p class="text-xs text-slate-600 mt-1">🛒 ${trx.items}</p>
-              </div>
-              <div class="text-right">
-                <span class="font-bold text-xs text-slate-900 block">Rp ${trx.total.toLocaleString('id-ID')}</span>
-                <span class="text-[10px] text-slate-500">Bayar: Rp ${trx.bayar.toLocaleString('id-ID')}</span>
-              </div>
-            </div>
+        let rowsTrx = '';
+        pb.listTransaksi.forEach((t) => {
+          rowsTrx += `
+            <tr class="hover:bg-slate-50 transition">
+              <td class="py-2.5 px-4 font-semibold text-slate-700">${t.tanggal || '-'} ${t.waktu ? '(' + t.waktu + ')' : ''}</td>
+              <td class="py-2.5 px-4 text-slate-600">${t.items}</td>
+              <td class="py-2.5 px-4 text-right font-bold text-slate-900">Rp ${Number(t.total).toLocaleString('id-ID')}</td>
+              <td class="py-2.5 px-4 text-right text-slate-600">Rp ${Number(t.bayar).toLocaleString('id-ID')}</td>
+              <td class="py-2.5 px-4 text-right font-bold ${t.kembali >= 0 ? 'text-emerald-600' : 'text-rose-600'}">
+                ${t.kembali >= 0 ? 'Rp ' + Number(t.kembali).toLocaleString('id-ID') : 'HUTANG Rp ' + Math.abs(t.kembali).toLocaleString('id-ID')}
+              </td>
+            </tr>
           `;
         });
 
-        let sisaPiutangBadge = '';
-        if (pb.totalHutangPiutang < 0) {
-          sisaPiutangBadge = `<span class="text-xs text-rose-600 font-bold bg-rose-50 px-2 py-1 rounded border border-rose-200">Sisa Utang: Rp ${Math.abs(pb.totalHutangPiutang).toLocaleString('id-ID')}</span>`;
-        }
+        const statusHutangBadge = pb.totalHutangPiutang < 0 
+          ? `<span class="bg-rose-100 text-rose-700 text-xs px-2.5 py-1 rounded-lg font-bold border border-rose-200">Sisa Utang: Rp ${Math.abs(pb.totalHutangPiutang).toLocaleString('id-ID')}</span>`
+          : `<span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-lg font-bold border border-emerald-200">Lunas / Non-Utang</span>`;
 
         container.innerHTML += `
           <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-            <div class="bg-slate-100/70 p-4 border-b border-slate-200/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div class="p-4 sm:p-5 bg-slate-50 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-                <h3 class="font-bold text-sm text-slate-800">👤 Pelanggan: ${pb.pembeli}</h3>
-                <p class="text-[11px] text-slate-500 font-medium">Total Belanja: ${pb.listTransaksi.length} transaksi</p>
-              </div>
-              <div class="flex items-center gap-3">
-                ${sisaPiutangBadge}
-                <div class="text-right">
-                  <span class="text-[10px] uppercase font-bold text-slate-400 block">Total Belanja</span>
-                  <span class="font-black text-sm text-emerald-700">Rp ${pb.totalBelanja.toLocaleString('id-ID')}</span>
+                <div class="flex items-center gap-2">
+                  <h3 class="font-bold text-base text-slate-900">👤 Pembeli: ${pb.pembeli}</h3>
+                  ${statusHutangBadge}
                 </div>
+                <p class="text-xs text-slate-500 mt-1">Total Belanja: <strong>Rp ${Number(pb.totalBelanja).toLocaleString('id-ID')}</strong> | Total Bayar: <strong>Rp ${Number(pb.totalBayar).toLocaleString('id-ID')}</strong></p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="cetakRekapPembeli(${index})" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1 shadow">
+                  <span>🖨️</span> Print
+                </button>
+                <button onclick="cetakThermalRekapPembeli(${index})" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1 shadow">
+                  <span>🦷</span> Thermal
+                </button>
               </div>
             </div>
-            <div class="p-4 space-y-2">
-              ${listHtml}
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-100/60 text-slate-500 font-semibold border-b border-slate-100">
+                    <th class="py-2.5 px-4">Waktu</th>
+                    <th class="py-2.5 px-4">Rincian Item</th>
+                    <th class="py-2.5 px-4 text-right">Total</th>
+                    <th class="py-2.5 px-4 text-right">Bayar</th>
+                    <th class="py-2.5 px-4 text-right">Kembali/Hutang</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  ${rowsTrx}
+                </tbody>
+              </table>
             </div>
           </div>
         `;
       });
     }
 
-    function hapusTransaksiSheet(rowIndex, namaPembeli) {
-      if (!isKasirUnlocked) {
-        bukaModalLogin();
-        return;
-      }
-
-      if (!confirm(`⚠️ Apakah Anda yakin ingin menghapus transaksi dari "${namaPembeli}" ini (Baris ke-${rowIndex})? Omset dan stok akan dikembalikan otomatis.`)) {
-        return;
-      }
-
-      showLoading(true, "Menghapus transaksi dari database...");
-
-      const params = new URLSearchParams({
-        action: 'hapusTransaksi',
-        rowIndex: rowIndex
-      });
-
-      fetch(`${API_URL}?${params.toString()}`, { method: 'GET', redirect: 'follow' })
-        .then(res => res.json())
-        .then(res => {
-          showLoading(false);
-          if (res.success) {
-            alert("✅ Transaksi berhasil dihapus!");
-            muatDataRekap();
-            muatDataProdukFromSheets();
-          } else {
-            alert("⚠️ Gagal menghapus: " + (res.message || "Terjadi kesalahan"));
-          }
-        })
-        .catch(err => {
-          showLoading(false);
-          alert("⚠️ Gagal terhubung ke Database saat menghapus transaksi.");
-        });
-    }
-
-    function cetakLaporanRekapUmum(tipe) {
-      const namaPimpinanInput = document.getElementById('inputNamaPimpinan').value.trim() || 'Pimpinan / Kasir';
-      document.getElementById('printNamaPimpinan').innerText = namaPimpinanInput;
+    /* KONTROL PROSES CETAK BIASA & THERMAL REKAP TRANSAKSI */
+    function setupHeaderCetakRekap(judul, infoWaktu) {
+      document.getElementById('printJudulLaporan').innerText = judul;
+      document.getElementById('printInfoWaktu').innerText = infoWaktu;
       document.getElementById('printTglCetak').innerText = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      document.getElementById('printNamaPimpinan').innerText = document.getElementById('inputNamaPimpinan').value || 'Pimpinan / Kasir';
 
       const dataURL = canvasTTD.toDataURL();
       document.getElementById('printAreaTtdImg').innerHTML = `<img src="${dataURL}" style="max-height: 60px; width: auto; display: block; margin: 0 auto;" />`;
+    }
 
-      let tabelHtml = '';
-      const dataHarian = filteredDataRekapCache.harian || [];
-      const dataBulanan = filteredDataRekapCache.bulanan || [];
-      const dataPembeli = filteredDataRekapCache.rekapPembeliBulanan || [];
+    function cetakRekapHarian(idx) {
+      const h = filteredDataRekapCache.harian[idx];
+      if (!h) return;
 
-      if (tipe === 'harian') {
-        document.getElementById('printJudulLaporan').innerText = "LAPORAN REKAPITULASI TRANSAKSI HARIAN";
-        document.getElementById('printInfoWaktu').innerText = `Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`;
+      setupHeaderCetakRekap(`LAPORAN REKAP TRANSAKSI HARIAN (${h.tanggal})`, `Tanggal Transaksi: ${h.tanggal}`);
 
-        if (dataHarian.length === 0) {
-          alert("Tidak ada data rekap harian untuk dicetak.");
-          return;
-        }
-
-        let totalSemuaOmset = 0;
-        let rowsHtml = '';
-        dataHarian.forEach((h, idx) => {
-          totalSemuaOmset += h.totalOmset;
-          rowsHtml += `
-            <tr style="background-color: #f8fafc; font-weight: bold; border-top: 1px solid #cbd5e1;">
-              <td colspan="4" style="padding: 6px 8px; font-size: 11px;">Tanggal: ${h.tanggal} (${h.listTransaksi.length} Transaksi)</td>
-              <td style="padding: 6px 8px; text-align: right; font-size: 11px;">Omset: Rp ${h.totalOmset.toLocaleString('id-ID')}</td>
-            </tr>
-          `;
-          h.listTransaksi.forEach((t, i) => {
-            rowsHtml += `
-              <tr style="border-bottom: 1px solid #e2e8f0;">
-                <td style="padding: 6px 8px; text-align: center; font-size: 11px;">${i + 1}</td>
-                <td style="padding: 6px 8px; font-size: 11px;">${t.waktu || '-'}</td>
-                <td style="padding: 6px 8px; font-size: 11px;">${t.pembeli}</td>
-                <td style="padding: 6px 8px; font-size: 11px;">${t.items}</td>
-                <td style="padding: 6px 8px; text-align: right; font-size: 11px;">Rp ${Number(t.total).toLocaleString('id-ID')}</td>
-              </tr>
-            `;
-          });
-        });
-
-        tabelHtml = `
-          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-            <thead>
-              <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; text-transform: uppercase; font-size: 11px;">
-                <th style="padding: 8px; text-align: center; width: 30px;">No</th>
-                <th style="padding: 8px; text-align: left; width: 70px;">Waktu</th>
-                <th style="padding: 8px; text-align: left; width: 110px;">Pelanggan</th>
-                <th style="padding: 8px; text-align: left;">Rincian Item</th>
-                <th style="padding: 8px; text-align: right; width: 90px;">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rowsHtml}
-            </tbody>
-            <tfoot>
-              <tr style="border-top: 2px solid #0f172a; font-weight: bold; font-size: 11px;">
-                <td colspan="4" style="padding: 8px; text-align: right;">TOTAL KESELURUHAN OMSET HARIAN:</td>
-                <td style="padding: 8px; text-align: right; color: #047857;">Rp ${totalSemuaOmset.toLocaleString('id-ID')}</td>
-              </tr>
-            </tfoot>
-          </table>
+      let rowsHtml = '';
+      h.listTransaksi.forEach((t, i) => {
+        rowsHtml += `
+          <tr style="border-bottom: 1px solid #cbd5e1;">
+            <td style="padding: 8px; text-align: center; font-size: 11px;">${i + 1}</td>
+            <td style="padding: 8px; font-size: 11px;">${t.waktu || '-'}</td>
+            <td style="padding: 8px; font-weight: bold; font-size: 11px;">${t.pembeli}</td>
+            <td style="padding: 8px; font-size: 11px;">${t.items}</td>
+            <td style="padding: 8px; text-align: right; font-size: 11px;">Rp ${Number(t.total).toLocaleString('id-ID')}</td>
+            <td style="padding: 8px; text-align: right; font-size: 11px;">Rp ${Number(t.bayar).toLocaleString('id-ID')}</td>
+            <td style="padding: 8px; text-align: right; font-size: 11px; font-weight: bold;">${t.kembali >= 0 ? 'Rp ' + Number(t.kembali).toLocaleString('id-ID') : 'HUTANG Rp ' + Math.abs(t.kembali).toLocaleString('id-ID')}</td>
+          </tr>
         `;
+      });
 
-      } else if (tipe === 'bulanan') {
-        document.getElementById('printJudulLaporan').innerText = "LAPORAN REKAPITULASI TRANSAKSI BULANAN";
-        document.getElementById('printInfoWaktu').innerText = `Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`;
-
-        if (dataBulanan.length === 0) {
-          alert("Tidak ada data rekap bulanan untuk dicetak.");
-          return;
-        }
-
-        let totalOmsetBulan = 0;
-        let rowsHtml = '';
-        dataBulanan.forEach((b, idx) => {
-          totalOmsetBulan += b.totalOmset;
-          rowsHtml += `
-            <tr style="border-bottom: 1px solid #cbd5e1;">
-              <td style="padding: 8px; text-align: center; font-size: 11px;">${idx + 1}</td>
-              <td style="padding: 8px; font-size: 11px; font-weight: bold;">${b.bulan}</td>
-              <td style="padding: 8px; text-align: center; font-size: 11px;">${b.listTransaksi.length} Transaksi</td>
-              <td style="padding: 8px; text-align: right; font-size: 11px; font-weight: bold; color: #047857;">Rp ${b.totalOmset.toLocaleString('id-ID')}</td>
+      const tabelHtml = `
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+          <thead>
+            <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; text-transform: uppercase; font-size: 11px;">
+              <th style="padding: 8px; text-align: center; width: 30px;">No</th>
+              <th style="padding: 8px; text-align: left; width: 70px;">Waktu</th>
+              <th style="padding: 8px; text-align: left; width: 110px;">Pembeli</th>
+              <th style="padding: 8px; text-align: left;">Rincian Item</th>
+              <th style="padding: 8px; text-align: right; width: 85px;">Total</th>
+              <th style="padding: 8px; text-align: right; width: 85px;">Bayar</th>
+              <th style="padding: 8px; text-align: right; width: 100px;">Kembali/Hutang</th>
             </tr>
-          `;
-        });
-
-        tabelHtml = `
-          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-            <thead>
-              <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; text-transform: uppercase; font-size: 11px;">
-                <th style="padding: 8px; text-align: center; width: 40px;">No</th>
-                <th style="padding: 8px; text-align: left;">Bulan Rekap</th>
-                <th style="padding: 8px; text-align: center; width: 120px;">Jumlah Transaksi</th>
-                <th style="padding: 8px; text-align: right; width: 130px;">Total Omset</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rowsHtml}
-            </tbody>
-            <tfoot>
-              <tr style="border-top: 2px solid #0f172a; font-weight: bold; font-size: 11px;">
-                <td colspan="3" style="padding: 8px; text-align: right;">TOTAL KESELURUHAN OMSET BULANAN:</td>
-                <td style="padding: 8px; text-align: right; color: #047857;">Rp ${totalOmsetBulan.toLocaleString('id-ID')}</td>
-              </tr>
-            </tfoot>
-          </table>
-        `;
-
-      } else if (tipe === 'pembeli') {
-        document.getElementById('printJudulLaporan').innerText = "LAPORAN REKAPITULASI TRANSAKSI PER PEMBELI";
-        document.getElementById('printInfoWaktu').innerText = `Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`;
-
-        if (dataPembeli.length === 0) {
-          alert("Tidak ada data rekap per pembeli untuk dicetak.");
-          return;
-        }
-
-        let totalBelanjaSemua = 0;
-        let rowsHtml = '';
-        dataPembeli.forEach((pb, idx) => {
-          totalBelanjaSemua += pb.totalBelanja;
-          rowsHtml += `
-            <tr style="border-bottom: 1px solid #cbd5e1;">
-              <td style="padding: 8px; text-align: center; font-size: 11px;">${idx + 1}</td>
-              <td style="padding: 8px; font-size: 11px; font-weight: bold;">${pb.pembeli}</td>
-              <td style="padding: 8px; text-align: center; font-size: 11px;">${pb.listTransaksi.length} Pesanan</td>
-              <td style="padding: 8px; text-align: right; font-size: 11px; font-weight: bold; color: #047857;">Rp ${pb.totalBelanja.toLocaleString('id-ID')}</td>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+          <tfoot>
+            <tr style="border-top: 2px solid #0f172a; font-weight: bold; font-size: 11px;">
+              <td colspan="4" style="padding: 8px; text-align: right;">TOTAL OMSET HARIAN:</td>
+              <td colspan="3" style="padding: 8px; text-align: right; color: #047857; font-size: 13px;">Rp ${Number(h.totalOmset).toLocaleString('id-ID')}</td>
             </tr>
-          `;
-        });
-
-        tabelHtml = `
-          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-            <thead>
-              <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; text-transform: uppercase; font-size: 11px;">
-                <th style="padding: 8px; text-align: center; width: 40px;">No</th>
-                <th style="padding: 8px; text-align: left;">Nama Pelanggan / Pembeli</th>
-                <th style="padding: 8px; text-align: center; width: 120px;">Total Transaksi</th>
-                <th style="padding: 8px; text-align: right; width: 130px;">Total Belanja</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rowsHtml}
-            </tbody>
-            <tfoot>
-              <tr style="border-top: 2px solid #0f172a; font-weight: bold; font-size: 11px;">
-                <td colspan="3" style="padding: 8px; text-align: right;">TOTAL KESELURUHAN BELANJA PELANGGAN:</td>
-                <td style="padding: 8px; text-align: right; color: #047857;">Rp ${totalBelanjaSemua.toLocaleString('id-ID')}</td>
-              </tr>
-            </tfoot>
-          </table>
-        `;
-      }
+          </tfoot>
+        </table>
+      `;
 
       document.getElementById('printKontenTabel').innerHTML = tabelHtml;
       setTimeout(() => window.print(), 300);
+    }
+
+    async function cetakThermalRekapHarian(idx) {
+      const h = filteredDataRekapCache.harian[idx];
+      if (!h) return;
+
+      const ESC = '\x1B';
+      const GS = '\x1D';
+      const INIT = ESC + '@';
+      const CENTER = ESC + 'a' + '\x01';
+      const LEFT = ESC + 'a' + '\x00';
+      const BOLD_ON = ESC + 'E' + '\x01';
+      const BOLD_OFF = ESC + 'E' + '\x00';
+      const CUT = GS + 'V' + '\x41' + '\x03';
+
+      let textPrint = INIT;
+      textPrint += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
+      textPrint += "Jl. Raya Jagapura Lor - Nyibanda\n";
+      textPrint += "REKAP TRANSAKSI HARIAN\n";
+      textPrint += "--------------------------------\n";
+      textPrint += LEFT;
+      textPrint += `Tanggal : ${h.tanggal}\n`;
+      textPrint += `Cetak   : ${new Date().toLocaleString('id-ID')}\n`;
+      textPrint += "--------------------------------\n";
+
+      h.listTransaksi.forEach((t, i) => {
+        textPrint += `${i + 1}. [${t.waktu || '-'}] ${t.pembeli}\n`;
+        textPrint += `   ${t.items}\n`;
+        textPrint += `   Total: Rp ${Number(t.total).toLocaleString('id-ID')}\n`;
+        textPrint += "--------------------------------\n";
+      });
+
+      textPrint += CENTER + BOLD_ON;
+      textPrint += `TOTAL OMSET HARIAN\n`;
+      textPrint += `Rp ${Number(h.totalOmset).toLocaleString('id-ID')}\n`;
+      textPrint += BOLD_OFF + "--------------------------------\n";
+      textPrint += CENTER + "Terima Kasih\n\n";
+      textPrint += CENTER + "Kunjungi Situs Kami\n";
+      textPrint += CENTER + "Scann QR Kode Dibawah ini\n\n";
+      const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
+      const storeLength = qrUrl.length + 3;
+      const pL = String.fromCharCode(storeLength % 256);
+      const pH = String.fromCharCode(Math.floor(storeLength / 256));
+
+      textPrint += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+      textPrint += GS + '(k' + '\x03\x00\x31\x43\x05';
+      textPrint += GS + '(k' + '\x03\x00\x31\x45\x30';
+      textPrint += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+      textPrint += GS + '(k' + '\x03\x00\x31\x51\x30';
+      textPrint += "\n" + CUT;
+      await kirimDataRawKePrinter(textPrint);
+    }
+
+    function cetakRekapBulanan(idx) {
+      const b = filteredDataRekapCache.bulanan[idx];
+      if (!b) return;
+
+      setupHeaderCetakRekap(`LAPORAN REKAP TRANSAKSI BULANAN (${b.bulan.toUpperCase()})`, `Bulan Transaksi: ${b.bulan}`);
+
+      let rowsHtml = '';
+      b.listTransaksi.forEach((t, i) => {
+        rowsHtml += `
+          <tr style="border-bottom: 1px solid #cbd5e1;">
+            <td style="padding: 8px; text-align: center; font-size: 11px;">${i + 1}</td>
+            <td style="padding: 8px; font-size: 11px;">${t.tanggal || '-'}</td>
+            <td style="padding: 8px; font-weight: bold; font-size: 11px;">${t.pembeli}</td>
+            <td style="padding: 8px; font-size: 11px;">${t.items}</td>
+            <td style="padding: 8px; text-align: right; font-size: 11px;">Rp ${Number(t.total).toLocaleString('id-ID')}</td>
+            <td style="padding: 8px; text-align: right; font-size: 11px;">Rp ${Number(t.bayar).toLocaleString('id-ID')}</td>
+            <td style="padding: 8px; text-align: right; font-size: 11px; font-weight: bold;">${t.kembali >= 0 ? 'Rp ' + Number(t.kembali).toLocaleString('id-ID') : 'HUTANG Rp ' + Math.abs(t.kembali).toLocaleString('id-ID')}</td>
+          </tr>
+        `;
+      });
+
+      const tabelHtml = `
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+          <thead>
+            <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; text-transform: uppercase; font-size: 11px;">
+              <th style="padding: 8px; text-align: center; width: 30px;">No</th>
+              <th style="padding: 8px; text-align: left; width: 90px;">Tanggal</th>
+              <th style="padding: 8px; text-align: left; width: 110px;">Pembeli</th>
+              <th style="padding: 8px; text-align: left;">Rincian Item</th>
+              <th style="padding: 8px; text-align: right; width: 85px;">Total</th>
+              <th style="padding: 8px; text-align: right; width: 85px;">Bayar</th>
+              <th style="padding: 8px; text-align: right; width: 100px;">Kembali/Hutang</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+          <tfoot>
+            <tr style="border-top: 2px solid #0f172a; font-weight: bold; font-size: 11px;">
+              <td colspan="4" style="padding: 8px; text-align: right;">TOTAL OMSET BULANAN:</td>
+              <td colspan="3" style="padding: 8px; text-align: right; color: #047857; font-size: 13px;">Rp ${Number(b.totalOmset).toLocaleString('id-ID')}</td>
+            </tr>
+          </tfoot>
+        </table>
+      `;
+
+      document.getElementById('printKontenTabel').innerHTML = tabelHtml;
+      setTimeout(() => window.print(), 300);
+    }
+
+    async function cetakThermalRekapBulanan(idx) {
+      const b = filteredDataRekapCache.bulanan[idx];
+      if (!b) return;
+
+      const ESC = '\x1B';
+      const GS = '\x1D';
+      const INIT = ESC + '@';
+      const CENTER = ESC + 'a' + '\x01';
+      const LEFT = ESC + 'a' + '\x00';
+      const BOLD_ON = ESC + 'E' + '\x01';
+      const BOLD_OFF = ESC + 'E' + '\x00';
+      const CUT = GS + 'V' + '\x41' + '\x03';
+
+      let textPrint = INIT;
+      textPrint += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
+      textPrint += "Jl. Raya Jagapura Lor - Nyibanda\n";
+      textPrint += "REKAP TRANSAKSI BULANAN\n";
+      textPrint += "--------------------------------\n";
+      textPrint += LEFT;
+      textPrint += `Bulan   : ${b.bulan}\n`;
+      textPrint += `Cetak   : ${new Date().toLocaleString('id-ID')}\n`;
+      textPrint += "--------------------------------\n";
+
+      b.listTransaksi.forEach((t, i) => {
+        textPrint += `${i + 1}. [${t.tanggal || '-'}] ${t.pembeli}\n`;
+        textPrint += `   ${t.items}\n`;
+        textPrint += `   Total: Rp ${Number(t.total).toLocaleString('id-ID')}\n`;
+        textPrint += "--------------------------------\n";
+      });
+
+      textPrint += CENTER + BOLD_ON;
+      textPrint += `TOTAL OMSET BULANAN\n`;
+      textPrint += `Rp ${Number(b.totalOmset).toLocaleString('id-ID')}\n`;
+      textPrint += BOLD_OFF + "--------------------------------\n";
+      textPrint += CENTER + "Terima Kasih\n\n";
+            textPrint += CENTER + "Kunjungi Situs Kami\n";
+      textPrint += CENTER + "Scann QR Kode Dibawah ini\n\n";
+      const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
+      const storeLength = qrUrl.length + 3;
+      const pL = String.fromCharCode(storeLength % 256);
+      const pH = String.fromCharCode(Math.floor(storeLength / 256));
+
+      textPrint += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+      textPrint += GS + '(k' + '\x03\x00\x31\x43\x05';
+      textPrint += GS + '(k' + '\x03\x00\x31\x45\x30';
+      textPrint += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+      textPrint += GS + '(k' + '\x03\x00\x31\x51\x30';
+      textPrint += "\n" + CUT;
+
+      await kirimDataRawKePrinter(textPrint);
+    }
+
+    function cetakRekapPembeli(idx) {
+      const pb = filteredDataRekapCache.rekapPembeliBulanan[idx];
+      if (!pb) return;
+
+      setupHeaderCetakRekap(`LAPORAN REKAP TRANSAKSI PELANGGAN (${pb.pembeli.toUpperCase()})`, `Nama Pelanggan: ${pb.pembeli}`);
+
+      let rowsHtml = '';
+      pb.listTransaksi.forEach((t, i) => {
+        rowsHtml += `
+          <tr style="border-bottom: 1px solid #cbd5e1;">
+            <td style="padding: 8px; text-align: center; font-size: 11px;">${i + 1}</td>
+            <td style="padding: 8px; font-size: 11px;">${t.tanggal || '-'} ${t.waktu ? '(' + t.waktu + ')' : ''}</td>
+            <td style="padding: 8px; font-size: 11px;">${t.items}</td>
+            <td style="padding: 8px; text-align: right; font-size: 11px;">Rp ${Number(t.total).toLocaleString('id-ID')}</td>
+            <td style="padding: 8px; text-align: right; font-size: 11px;">Rp ${Number(t.bayar).toLocaleString('id-ID')}</td>
+            <td style="padding: 8px; text-align: right; font-size: 11px; font-weight: bold;">${t.kembali >= 0 ? 'Rp ' + Number(t.kembali).toLocaleString('id-ID') : 'HUTANG Rp ' + Math.abs(t.kembali).toLocaleString('id-ID')}</td>
+          </tr>
+        `;
+      });
+
+      const tabelHtml = `
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+          <thead>
+            <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; text-transform: uppercase; font-size: 11px;">
+              <th style="padding: 8px; text-align: center; width: 30px;">No</th>
+              <th style="padding: 8px; text-align: left; width: 120px;">Waktu</th>
+              <th style="padding: 8px; text-align: left;">Rincian Item</th>
+              <th style="padding: 8px; text-align: right; width: 90px;">Total Belanja</th>
+              <th style="padding: 8px; text-align: right; width: 90px;">Total Bayar</th>
+              <th style="padding: 8px; text-align: right; width: 100px;">Sisa / Hutang</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+          <tfoot>
+            <tr style="border-top: 2px solid #0f172a; font-weight: bold; font-size: 11px;">
+              <td colspan="3" style="padding: 8px; text-align: right;">TOTAL KESELURUHAN:</td>
+              <td style="padding: 8px; text-align: right;">Rp ${Number(pb.totalBelanja).toLocaleString('id-ID')}</td>
+              <td style="padding: 8px; text-align: right;">Rp ${Number(pb.totalBayar).toLocaleString('id-ID')}</td>
+              <td style="padding: 8px; text-align: right; ${pb.totalHutangPiutang < 0 ? 'color: #dc2626;' : 'color: #047857;'}">
+                ${pb.totalHutangPiutang >= 0 ? 'Rp ' + Number(pb.totalHutangPiutang).toLocaleString('id-ID') : 'SISA UTANG Rp ' + Math.abs(pb.totalHutangPiutang).toLocaleString('id-ID')}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      `;
+
+      document.getElementById('printKontenTabel').innerHTML = tabelHtml;
+      setTimeout(() => window.print(), 300);
+    }
+
+    async function cetakThermalRekapPembeli(idx) {
+      const pb = filteredDataRekapCache.rekapPembeliBulanan[idx];
+      if (!pb) return;
+
+      const ESC = '\x1B';
+      const GS = '\x1D';
+      const INIT = ESC + '@';
+      const CENTER = ESC + 'a' + '\x01';
+      const LEFT = ESC + 'a' + '\x00';
+      const BOLD_ON = ESC + 'E' + '\x01';
+      const BOLD_OFF = ESC + 'E' + '\x00';
+      const CUT = GS + 'V' + '\x41' + '\x03';
+
+      let textPrint = INIT;
+      textPrint += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
+      textPrint += "Jl. Raya Jagapura Lor - Nyibanda\n";
+      textPrint += "REKAP TRANSAKSI PEMBELI\n";
+      textPrint += "--------------------------------\n";
+      textPrint += LEFT;
+      textPrint += `Pembeli : ${pb.pembeli}\n`;
+      textPrint += `Cetak   : ${new Date().toLocaleString('id-ID')}\n`;
+      textPrint += "--------------------------------\n";
+
+      pb.listTransaksi.forEach((t, i) => {
+        textPrint += `${i + 1}. [${t.tanggal || '-'}] ${t.items}\n`;
+        textPrint += `   Total: Rp ${Number(t.total).toLocaleString('id-ID')}\n`;
+        textPrint += "--------------------------------\n";
+      });
+
+      textPrint += CENTER + BOLD_ON;
+      textPrint += `TOTAL BELANJA : Rp ${Number(pb.totalBelanja).toLocaleString('id-ID')}\n`;
+      textPrint += `TOTAL BAYAR   : Rp ${Number(pb.totalBayar).toLocaleString('id-ID')}\n`;
+      if (pb.totalHutangPiutang < 0) {
+        textPrint += `SISA UTANG    : Rp ${Math.abs(pb.totalHutangPiutang).toLocaleString('id-ID')}\n`;
+      }
+      textPrint += BOLD_OFF + "--------------------------------\n";
+      textPrint += CENTER + "Terima Kasih Atas Kunjungan Anda\n\n";
+            textPrint += CENTER + "Kunjungi Situs Kami\n";
+      textPrint += CENTER + "Scann QR Kode Dibawah ini\n\n";
+      const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
+      const storeLength = qrUrl.length + 3;
+      const pL = String.fromCharCode(storeLength % 256);
+      const pH = String.fromCharCode(Math.floor(storeLength / 256));
+
+      textPrint += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+      textPrint += GS + '(k' + '\x03\x00\x31\x43\x05';
+      textPrint += GS + '(k' + '\x03\x00\x31\x45\x30';
+      textPrint += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+      textPrint += GS + '(k' + '\x03\x00\x31\x51\x30';
+      textPrint += "\n" + CUT;
+
+      await kirimDataRawKePrinter(textPrint);
     }
   </script>
 </body>
