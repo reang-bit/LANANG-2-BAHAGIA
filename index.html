@@ -1928,15 +1928,15 @@
       }
     }
 
-    function kosongkanKeranjang() {
+function kosongkanKeranjang() {
       keranjang = [];
+      updateKeranjangUI();
       document.getElementById('inputBayar').value = '';
-      document.getElementById('selectCatatanKosongan').value = '';
-      document.getElementById('selectPelayan').value = '';
       document.getElementById('selectNamaPembeli').value = 'Umum';
       document.getElementById('inputNamaPembeliBaru').style.display = 'none';
       document.getElementById('inputNamaPembeliBaru').value = '';
-      updateKeranjangUI();
+      document.getElementById('selectPelayan').value = '';
+      document.getElementById('selectCatatanKosongan').value = '';
     }
 
     function prosesBayar() {
