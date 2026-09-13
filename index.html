@@ -592,14 +592,29 @@
       </div>
 
       <div id="kontenRekapHarian" class="space-y-4">
+        <div class="flex justify-end">
+          <button onclick="pastikanDataRekapSiap(() => cetakLaporanRekapUmum('harian'))" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow">
+            <span>🖨️</span> Cetak Rekap Harian
+          </button>
+        </div>
         <div id="listRekapHarian" class="space-y-4"></div>
       </div>
 
       <div id="kontenRekapBulanan" class="space-y-4 hidden">
+        <div class="flex justify-end">
+          <button onclick="pastikanDataRekapSiap(() => cetakLaporanRekapUmum('bulanan'))" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow">
+            <span>🖨️</span> Cetak Rekap Bulanan
+          </button>
+        </div>
         <div id="listRekapBulanan" class="space-y-4"></div>
       </div>
 
       <div id="kontenRekapPembeli" class="space-y-4 hidden">
+        <div class="flex justify-end">
+          <button onclick="pastikanDataRekapSiap(() => cetakLaporanRekapUmum('pembeli'))" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow">
+            <span>🖨️</span> Cetak Rekap Per Pembeli
+          </button>
+        </div>
         <div id="listRekapPembeli" class="space-y-4"></div>
       </div>
     </div>
@@ -942,7 +957,7 @@
       }
     }
 
-    async function cetak LangsungThermal(namaPembeli, pelayan, total, bayar, kembali, catatanKosongan) {
+    async function cetakLangsungThermal(namaPembeli, pelayan, total, bayar, kembali, catatanKosongan) {
       const ESC = '\x1B';
       const GS = '\x1D';
       const INIT = ESC + '@';
@@ -1779,16 +1794,16 @@
         stok: stok
       });
 
-      fetch(`${API_URL}?${params.toString()}`, { method: 'GET', redirect: "follow" })
+      fetch(`${API_URL}?${params.toString()}`, { method: 'GET', redirect: 'follow' })
         .then(res => res.json())
         .then(res => {
           showLoading(false);
           tutupModalEdit();
           if (res.success) {
-            alert("✅ Perubahan barang berhasil disimpan!");
+            alert("✅ Perubahan produk berhasil disimpan!");
             muatDataProdukFromSheets();
           } else {
-            alert("⚠️ Gagal memperbarui barang.");
+            alert("⚠️ Gagal: " + (res.message || "Terjadi kesalahan"));
           }
         })
         .catch(err => {
@@ -1928,15 +1943,15 @@
       }
     }
 
-function kosongkanKeranjang() {
+    function kosongkanKeranjang() {
       keranjang = [];
-      updateKeranjangUI();
       document.getElementById('inputBayar').value = '';
+      document.getElementById('selectCatatanKosongan').value = '';
+      document.getElementById('selectPelayan').value = '';
       document.getElementById('selectNamaPembeli').value = 'Umum';
       document.getElementById('inputNamaPembeliBaru').style.display = 'none';
       document.getElementById('inputNamaPembeliBaru').value = '';
-      document.getElementById('selectPelayan').value = '';
-      document.getElementById('selectCatatanKosongan').value = '';
+      updateKeranjangUI();
     }
 
     function prosesBayar() {
@@ -2214,12 +2229,6 @@ function kosongkanKeranjang() {
                   <span class="text-[10px] uppercase font-bold text-slate-400 block">Omset Harian</span>
                   <span class="font-black text-sm text-emerald-700">Rp ${h.totalOmset.toLocaleString('id-ID')}</span>
                 </div>
-                <button onclick="pastikanDataRekapSiap(() => cetakRekapSpesifik('harian', ${index}))" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow" title="Cetak Standar">
-                  <span>🖨️</span> Cetak
-                </button>
-                <button onclick="pastikanDataRekapSiap(() => cetakThermalRekapSpesifik('harian', ${index}))" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow" title="Cetak Thermal Bluetooth">
-                  <span>🦷</span> Thermal
-                </button>
               </div>
             </div>
             <div class="p-4 space-y-2">
@@ -2245,20 +2254,15 @@ function kosongkanKeranjang() {
           listHtml += `
             <div class="py-2.5 px-3 bg-slate-50 rounded-xl border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
               <div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                   <span class="font-bold text-xs text-slate-800">👤 ${trx.pembeli}</span>
                   <span class="text-[10px] text-slate-400 bg-white px-2 py-0.5 rounded border">📅 ${trx.tanggal}</span>
                 </div>
                 <p class="text-xs text-slate-600 mt-1">🛒 <strong>Items:</strong> ${trx.items}</p>
               </div>
-              <div class="flex items-center gap-3">
-                <span class="font-extrabold text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
-                  Rp ${trx.total.toLocaleString('id-ID')}
-                </span>
-                <button onclick="hapusTransaksiSheet(${trx.rowIndex}, '${trx.pembeli}')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-[10px] font-bold transition border border-rose-200" title="Hapus Transaksi">
-                  🗑️ Hapus
-                </button>
-              </div>
+              <span class="font-extrabold text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
+                Rp ${trx.total.toLocaleString('id-ID')}
+              </span>
             </div>
           `;
         });
@@ -2268,19 +2272,11 @@ function kosongkanKeranjang() {
             <div class="bg-slate-100/70 p-4 border-b border-slate-200/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
                 <h3 class="font-bold text-sm text-slate-800">🗓️ Bulan: ${b.bulan}</h3>
-                <p class="text-[11px] text-slate-500 font-medium">Total Transaksi: ${b.listTransaksi.length} pesanan</p>
+                <p class="text-[11px] text-slate-500 font-medium">Total Pesanan: ${b.listTransaksi.length} transaksi</p>
               </div>
-              <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
-                <div class="text-right">
-                  <span class="text-[10px] uppercase font-bold text-slate-400 block">Omset Bulanan</span>
-                  <span class="font-black text-sm text-emerald-700">Rp ${b.totalOmset.toLocaleString('id-ID')}</span>
-                </div>
-                <button onclick="pastikanDataRekapSiap(() => cetakRekapSpesifik('bulanan', ${index}))" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow" title="Cetak Standar">
-                  <span>🖨️</span> Cetak
-                </button>
-                <button onclick="pastikanDataRekapSiap(() => cetakThermalRekapSpesifik('bulanan', ${index}))" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow" title="Cetak Thermal Bluetooth">
-                  <span>🦷</span> Thermal
-                </button>
+              <div class="text-right">
+                <span class="text-[10px] uppercase font-bold text-slate-400 block">Omset Bulanan</span>
+                <span class="font-black text-sm text-emerald-700">Rp ${b.totalOmset.toLocaleString('id-ID')}</span>
               </div>
             </div>
             <div class="p-4 space-y-2">
@@ -2291,62 +2287,50 @@ function kosongkanKeranjang() {
       });
     }
 
-    function renderRekapPembeliBulanan(dataPembeliBulanan) {
+    function renderRekapPembeliBulanan(dataPembeli) {
       const container = document.getElementById('listRekapPembeli');
       container.innerHTML = '';
 
-      if (!dataPembeliBulanan || dataPembeliBulanan.length === 0) {
-        container.innerHTML = `<div class="bg-white p-6 rounded-2xl border text-center text-slate-400 text-xs">Tidak ada data rekap per pembeli yang sesuai filter.</div>`;
+      if (!dataPembeli || dataPembeli.length === 0) {
+        container.innerHTML = `<div class="bg-white p-6 rounded-2xl border text-center text-slate-400 text-xs">Tidak ada data rekap pembeli yang sesuai filter.</div>`;
         return;
       }
 
-      dataPembeliBulanan.forEach((pb, index) => {
+      dataPembeli.forEach((pb, index) => {
         let listHtml = '';
         pb.listTransaksi.forEach(trx => {
-          let statusBayarHtml = "";
-          if (trx.kembali >= 0) {
-            statusBayarHtml = `<span class="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">Bayar: Rp ${trx.bayar.toLocaleString('id-ID')} | Kembali: Rp ${trx.kembali.toLocaleString('id-ID')}</span>`;
-          } else {
-            statusBayarHtml = `<span class="text-[10px] text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded border border-emerald-100">Bayar: Rp ${trx.bayar.toLocaleString('id-ID')} | Hutang: Rp ${Math.abs(trx.kembali).toLocaleString('id-ID')}</span>`;
-          }
-
           listHtml += `
-            <div class="py-2.5 px-3 bg-slate-50 rounded-xl border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs">
+            <div class="py-2.5 px-3 bg-slate-50 rounded-xl border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
               <div>
-                <span class="font-semibold text-slate-700">📅 ${trx.tanggal} (${trx.waktu})</span>
-                <p class="text-slate-500 mt-0.5">🛒 ${trx.items}</p>
-                <div class="mt-1">${statusBayarHtml}</div>
+                <span class="font-bold text-xs text-slate-800">📅 ${trx.tanggal} (${trx.waktu || '-'})</span>
+                <p class="text-xs text-slate-600 mt-1">🛒 ${trx.items}</p>
               </div>
-              <div class="flex items-center gap-3">
-                <div class="text-right">
-                  <span class="font-bold text-slate-800 block">Total: Rp ${trx.total.toLocaleString('id-ID')}</span>
-                </div>
-                <button onclick="hapusTransaksiSheet(${trx.rowIndex}, '${trx.pembeli}')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-[10px] font-bold transition border border-rose-200" title="Hapus Transaksi">
-                  🗑️ Hapus
-                </button>
+              <div class="text-right">
+                <span class="font-bold text-xs text-slate-900 block">Rp ${trx.total.toLocaleString('id-ID')}</span>
+                <span class="text-[10px] text-slate-500">Bayar: Rp ${trx.bayar.toLocaleString('id-ID')}</span>
               </div>
             </div>
           `;
         });
 
+        let sisaPiutangBadge = '';
+        if (pb.totalHutangPiutang < 0) {
+          sisaPiutangBadge = `<span class="text-xs text-rose-600 font-bold bg-rose-50 px-2 py-1 rounded border border-rose-200">Sisa Utang: Rp ${Math.abs(pb.totalHutangPiutang).toLocaleString('id-ID')}</span>`;
+        }
+
         container.innerHTML += `
           <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
             <div class="bg-slate-100/70 p-4 border-b border-slate-200/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-                <h3 class="font-bold text-sm text-slate-800">👤 Pembeli: ${pb.pembeli}</h3>
-                <p class="text-[11px] text-slate-500 font-medium">Total Transaksi: ${pb.listTransaksi.length} pesanan</p>
+                <h3 class="font-bold text-sm text-slate-800">👤 Pelanggan: ${pb.pembeli}</h3>
+                <p class="text-[11px] text-slate-500 font-medium">Total Belanja: ${pb.listTransaksi.length} transaksi</p>
               </div>
-              <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
+              <div class="flex items-center gap-3">
+                ${sisaPiutangBadge}
                 <div class="text-right">
                   <span class="text-[10px] uppercase font-bold text-slate-400 block">Total Belanja</span>
                   <span class="font-black text-sm text-emerald-700">Rp ${pb.totalBelanja.toLocaleString('id-ID')}</span>
                 </div>
-                <button onclick="pastikanDataRekapSiap(() => cetakRekapSpesifik('pembeli', ${index}))" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow" title="Cetak Standar">
-                  <span>🖨️</span> Cetak
-                </button>
-                <button onclick="pastikanDataRekapSiap(() => cetakThermalRekapSpesifik('pembeli', ${index}))" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow" title="Cetak Thermal Bluetooth">
-                  <span>🦷</span> Thermal
-                </button>
               </div>
             </div>
             <div class="p-4 space-y-2">
@@ -2357,148 +2341,17 @@ function kosongkanKeranjang() {
       });
     }
 
-    function cetakRekapSpesifik(tipe, index) {
-      let dataTarget = null;
-      let judulLaporan = "";
-      let infoWaktu = "";
-
-      if (tipe === 'harian') {
-        dataTarget = filteredDataRekapCache.harian[index];
-        judulLaporan = `REKAPITULASI TRANSAKSI HARIAN`;
-        infoWaktu = `Tanggal: ${dataTarget.tanggal} | Total Transaksi: ${dataTarget.listTransaksi.length} Pesanan`;
-      } else if (tipe === 'bulanan') {
-        dataTarget = filteredDataRekapCache.bulanan[index];
-        judulLaporan = `REKAPITULASI TRANSAKSI BULANAN`;
-        infoWaktu = `Bulan: ${dataTarget.bulan} | Total Transaksi: ${dataTarget.listTransaksi.length} Pesanan`;
-      } else if (tipe === 'pembeli') {
-        dataTarget = filteredDataRekapCache.rekapPembeliBulanan[index];
-        judulLaporan = `REKAPITULASI KHUSUS PER PEMBELI`;
-        infoWaktu = `Nama Pelanggan: ${dataTarget.pembeli} | Total Transaksi: ${dataTarget.listTransaksi.length} Pesanan`;
-      }
-
-      if (!dataTarget) return;
-
-      document.getElementById('printJudulLaporan').innerText = judulLaporan;
-      document.getElementById('printInfoWaktu').innerText = infoWaktu;
-      document.getElementById('printTglCetak').innerText = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-      document.getElementById('printNamaPimpinan').innerText = document.getElementById('inputNamaPimpinan').value || 'Pimpinan / Kasir';
-
-      const dataURL = canvasTTD.toDataURL();
-      document.getElementById('printAreaTtdImg').innerHTML = `<img src="${dataURL}" style="max-height: 60px; width: auto; display: block; margin: 0 auto;" />`;
-
-      let rowsHtml = '';
-      dataTarget.listTransaksi.forEach((trx, i) => {
-        rowsHtml += `
-          <tr style="border-bottom: 1px solid #cbd5e1;">
-            <td style="padding: 8px; text-align: center; font-size: 11px;">${i + 1}</td>
-            <td style="padding: 8px; font-size: 11px;">${trx.tanggal || '-'} ${trx.waktu ? '(' + trx.waktu + ')' : ''}</td>
-            <td style="padding: 8px; font-size: 11px; font-weight: bold;">${trx.pembeli}</td>
-            <td style="padding: 8px; font-size: 11px;">${trx.items}</td>
-            <td style="padding: 8px; text-align: right; font-size: 11px;">Rp ${Number(trx.total).toLocaleString('id-ID')}</td>
-          </tr>
-        `;
-      });
-
-      const totalOmsetVal = tipe === 'pembeli' ? dataTarget.totalBelanja : dataTarget.totalOmset;
-
-      const tabelHtml = `
-        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-          <thead>
-            <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; text-transform: uppercase; font-size: 11px;">
-              <th style="padding: 8px; text-align: center; width: 30px;">No</th>
-              <th style="padding: 8px; text-align: left; width: 120px;">Waktu</th>
-              <th style="padding: 8px; text-align: left; width: 100px;">Pembeli</th>
-              <th style="padding: 8px; text-align: left;">Rincian Item</th>
-              <th style="padding: 8px; text-align: right; width: 90px;">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rowsHtml}
-          </tbody>
-          <tfoot>
-            <tr style="border-top: 2px solid #0f172a; font-weight: bold; font-size: 11px;">
-              <td colspan="4" style="padding: 8px; text-align: right;">TOTAL KESELURUHAN OMSET:</td>
-              <td style="padding: 8px; text-align: right; color: #047857;">Rp ${Number(totalOmsetVal || 0).toLocaleString('id-ID')}</td>
-            </tr>
-          </tfoot>
-        </table>
-      `;
-
-      document.getElementById('printKontenTabel').innerHTML = tabelHtml;
-      setTimeout(() => window.print(), 300);
-    }
-
-    async function cetakThermalRekapSpesifik(tipe, index) {
-      let dataTarget = null;
-      if (tipe === 'harian') {
-        dataTarget = filteredDataRekapCache.harian[index];
-      } else if (tipe === 'bulanan') {
-        dataTarget = filteredDataRekapCache.bulanan[index];
-      } else if (tipe === 'pembeli') {
-        dataTarget = filteredDataRekapCache.rekapPembeliBulanan[index];
-      }
-
-      if (!dataTarget) return;
-
-      const ESC = '\x1B';
-      const GS = '\x1D';
-      const INIT = ESC + '@';
-      const CENTER = ESC + 'a' + '\x01';
-      const LEFT = ESC + 'a' + '\x00';
-      const BOLD_ON = ESC + 'E' + '\x01';
-      const BOLD_OFF = ESC + 'E' + '\x00';
-      const CUT = GS + 'V' + '\x41' + '\x03';
-
-      let textPrint = INIT;
-      textPrint += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
-      textPrint += "Laporan Rekapitulasi Transaksi\n";
-      textPrint += "--------------------------------\n";
-      textPrint += LEFT;
-      if (tipe === 'harian') textPrint += `Periode Harian : ${dataTarget.tanggal}\n`;
-      if (tipe === 'bulanan') textPrint += `Periode Bulan  : ${dataTarget.bulan}\n`;
-      if (tipe === 'pembeli') textPrint += `Nama Pembeli   : ${dataTarget.pembeli}\n`;
-      textPrint += "--------------------------------\n";
-
-      dataTarget.listTransaksi.forEach((trx, i) => {
-        textPrint += `${i + 1}. [${trx.pembeli}] - ${trx.tanggal}\n`;
-        textPrint += `   Item: ${trx.items}\n`;
-        textPrint += `   Total: Rp ${Number(trx.total).toLocaleString('id-ID')}\n`;
-        textPrint += "--------------------------------\n";
-      });
-
-      const totalOmsetVal = tipe === 'pembeli' ? dataTarget.totalBelanja : dataTarget.totalOmset;
-      textPrint += CENTER + BOLD_ON;
-      textPrint += `TOTAL OMSET: Rp ${Number(totalOmsetVal || 0).toLocaleString('id-ID')}\n`;
-      textPrint += BOLD_OFF + "--------------------------------\n";
-      textPrint += CENTER + "Terima Kasih\n\n";
-      textPrint += CENTER + "Kunjungi Situs Kami\n";
-      textPrint += CENTER + "Scann QR Kode Dibawah ini\n\n";
-      const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
-      const storeLength = qrUrl.length + 3;
-      const pL = String.fromCharCode(storeLength % 256);
-      const pH = String.fromCharCode(Math.floor(storeLength / 256));
-
-      textPrint += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
-      textPrint += GS + '(k' + '\x03\x00\x31\x43\x05';
-      textPrint += GS + '(k' + '\x03\x00\x31\x45\x30';
-      textPrint += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
-      textPrint += GS + '(k' + '\x03\x00\x31\x51\x30';
-      textPrint += "\n" + CUT;
-
-      await kirimDataRawKePrinter(textPrint);
-    }
-
-    function hapusTransaksiSheet(rowIndex, pembeli) {
+    function hapusTransaksiSheet(rowIndex, namaPembeli) {
       if (!isKasirUnlocked) {
         bukaModalLogin();
         return;
       }
 
-      if (!confirm(`⚠️ Apakah Anda yakin ingin menghapus transaksi milik "${pembeli}" dari database?`)) {
+      if (!confirm(`⚠️ Apakah Anda yakin ingin menghapus transaksi dari "${namaPembeli}" ini (Baris ke-${rowIndex})? Omset dan stok akan dikembalikan otomatis.`)) {
         return;
       }
 
-      showLoading(true, "Menghapus transaksi...");
+      showLoading(true, "Menghapus transaksi dari database...");
 
       const params = new URLSearchParams({
         action: 'hapusTransaksi',
@@ -2512,14 +2365,178 @@ function kosongkanKeranjang() {
           if (res.success) {
             alert("✅ Transaksi berhasil dihapus!");
             muatDataRekap();
+            muatDataProdukFromSheets();
           } else {
-            alert("⚠️ Gagal menghapus transaksi: " + (res.message || "Kesalahan server"));
+            alert("⚠️ Gagal menghapus: " + (res.message || "Terjadi kesalahan"));
           }
         })
         .catch(err => {
           showLoading(false);
-          alert("⚠️ Gagal terhubung ke database.");
+          alert("⚠️ Gagal terhubung ke Database saat menghapus transaksi.");
         });
+    }
+
+    function cetakLaporanRekapUmum(tipe) {
+      const namaPimpinanInput = document.getElementById('inputNamaPimpinan').value.trim() || 'Pimpinan / Kasir';
+      document.getElementById('printNamaPimpinan').innerText = namaPimpinanInput;
+      document.getElementById('printTglCetak').innerText = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+      const dataURL = canvasTTD.toDataURL();
+      document.getElementById('printAreaTtdImg').innerHTML = `<img src="${dataURL}" style="max-height: 60px; width: auto; display: block; margin: 0 auto;" />`;
+
+      let tabelHtml = '';
+      const dataHarian = filteredDataRekapCache.harian || [];
+      const dataBulanan = filteredDataRekapCache.bulanan || [];
+      const dataPembeli = filteredDataRekapCache.rekapPembeliBulanan || [];
+
+      if (tipe === 'harian') {
+        document.getElementById('printJudulLaporan').innerText = "LAPORAN REKAPITULASI TRANSAKSI HARIAN";
+        document.getElementById('printInfoWaktu').innerText = `Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`;
+
+        if (dataHarian.length === 0) {
+          alert("Tidak ada data rekap harian untuk dicetak.");
+          return;
+        }
+
+        let totalSemuaOmset = 0;
+        let rowsHtml = '';
+        dataHarian.forEach((h, idx) => {
+          totalSemuaOmset += h.totalOmset;
+          rowsHtml += `
+            <tr style="background-color: #f8fafc; font-weight: bold; border-top: 1px solid #cbd5e1;">
+              <td colspan="4" style="padding: 6px 8px; font-size: 11px;">Tanggal: ${h.tanggal} (${h.listTransaksi.length} Transaksi)</td>
+              <td style="padding: 6px 8px; text-align: right; font-size: 11px;">Omset: Rp ${h.totalOmset.toLocaleString('id-ID')}</td>
+            </tr>
+          `;
+          h.listTransaksi.forEach((t, i) => {
+            rowsHtml += `
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 6px 8px; text-align: center; font-size: 11px;">${i + 1}</td>
+                <td style="padding: 6px 8px; font-size: 11px;">${t.waktu || '-'}</td>
+                <td style="padding: 6px 8px; font-size: 11px;">${t.pembeli}</td>
+                <td style="padding: 6px 8px; font-size: 11px;">${t.items}</td>
+                <td style="padding: 6px 8px; text-align: right; font-size: 11px;">Rp ${Number(t.total).toLocaleString('id-ID')}</td>
+              </tr>
+            `;
+          });
+        });
+
+        tabelHtml = `
+          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+              <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; text-transform: uppercase; font-size: 11px;">
+                <th style="padding: 8px; text-align: center; width: 30px;">No</th>
+                <th style="padding: 8px; text-align: left; width: 70px;">Waktu</th>
+                <th style="padding: 8px; text-align: left; width: 110px;">Pelanggan</th>
+                <th style="padding: 8px; text-align: left;">Rincian Item</th>
+                <th style="padding: 8px; text-align: right; width: 90px;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+            <tfoot>
+              <tr style="border-top: 2px solid #0f172a; font-weight: bold; font-size: 11px;">
+                <td colspan="4" style="padding: 8px; text-align: right;">TOTAL KESELURUHAN OMSET HARIAN:</td>
+                <td style="padding: 8px; text-align: right; color: #047857;">Rp ${totalSemuaOmset.toLocaleString('id-ID')}</td>
+              </tr>
+            </tfoot>
+          </table>
+        `;
+
+      } else if (tipe === 'bulanan') {
+        document.getElementById('printJudulLaporan').innerText = "LAPORAN REKAPITULASI TRANSAKSI BULANAN";
+        document.getElementById('printInfoWaktu').innerText = `Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`;
+
+        if (dataBulanan.length === 0) {
+          alert("Tidak ada data rekap bulanan untuk dicetak.");
+          return;
+        }
+
+        let totalOmsetBulan = 0;
+        let rowsHtml = '';
+        dataBulanan.forEach((b, idx) => {
+          totalOmsetBulan += b.totalOmset;
+          rowsHtml += `
+            <tr style="border-bottom: 1px solid #cbd5e1;">
+              <td style="padding: 8px; text-align: center; font-size: 11px;">${idx + 1}</td>
+              <td style="padding: 8px; font-size: 11px; font-weight: bold;">${b.bulan}</td>
+              <td style="padding: 8px; text-align: center; font-size: 11px;">${b.listTransaksi.length} Transaksi</td>
+              <td style="padding: 8px; text-align: right; font-size: 11px; font-weight: bold; color: #047857;">Rp ${b.totalOmset.toLocaleString('id-ID')}</td>
+            </tr>
+          `;
+        });
+
+        tabelHtml = `
+          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+              <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; text-transform: uppercase; font-size: 11px;">
+                <th style="padding: 8px; text-align: center; width: 40px;">No</th>
+                <th style="padding: 8px; text-align: left;">Bulan Rekap</th>
+                <th style="padding: 8px; text-align: center; width: 120px;">Jumlah Transaksi</th>
+                <th style="padding: 8px; text-align: right; width: 130px;">Total Omset</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+            <tfoot>
+              <tr style="border-top: 2px solid #0f172a; font-weight: bold; font-size: 11px;">
+                <td colspan="3" style="padding: 8px; text-align: right;">TOTAL KESELURUHAN OMSET BULANAN:</td>
+                <td style="padding: 8px; text-align: right; color: #047857;">Rp ${totalOmsetBulan.toLocaleString('id-ID')}</td>
+              </tr>
+            </tfoot>
+          </table>
+        `;
+
+      } else if (tipe === 'pembeli') {
+        document.getElementById('printJudulLaporan').innerText = "LAPORAN REKAPITULASI TRANSAKSI PER PEMBELI";
+        document.getElementById('printInfoWaktu').innerText = `Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`;
+
+        if (dataPembeli.length === 0) {
+          alert("Tidak ada data rekap per pembeli untuk dicetak.");
+          return;
+        }
+
+        let totalBelanjaSemua = 0;
+        let rowsHtml = '';
+        dataPembeli.forEach((pb, idx) => {
+          totalBelanjaSemua += pb.totalBelanja;
+          rowsHtml += `
+            <tr style="border-bottom: 1px solid #cbd5e1;">
+              <td style="padding: 8px; text-align: center; font-size: 11px;">${idx + 1}</td>
+              <td style="padding: 8px; font-size: 11px; font-weight: bold;">${pb.pembeli}</td>
+              <td style="padding: 8px; text-align: center; font-size: 11px;">${pb.listTransaksi.length} Pesanan</td>
+              <td style="padding: 8px; text-align: right; font-size: 11px; font-weight: bold; color: #047857;">Rp ${pb.totalBelanja.toLocaleString('id-ID')}</td>
+            </tr>
+          `;
+        });
+
+        tabelHtml = `
+          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+              <tr style="background-color: #f1f5f9; border-bottom: 2px solid #0f172a; text-transform: uppercase; font-size: 11px;">
+                <th style="padding: 8px; text-align: center; width: 40px;">No</th>
+                <th style="padding: 8px; text-align: left;">Nama Pelanggan / Pembeli</th>
+                <th style="padding: 8px; text-align: center; width: 120px;">Total Transaksi</th>
+                <th style="padding: 8px; text-align: right; width: 130px;">Total Belanja</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+            <tfoot>
+              <tr style="border-top: 2px solid #0f172a; font-weight: bold; font-size: 11px;">
+                <td colspan="3" style="padding: 8px; text-align: right;">TOTAL KESELURUHAN BELANJA PELANGGAN:</td>
+                <td style="padding: 8px; text-align: right; color: #047857;">Rp ${totalBelanjaSemua.toLocaleString('id-ID')}</td>
+              </tr>
+            </tfoot>
+          </table>
+        `;
+      }
+
+      document.getElementById('printKontenTabel').innerHTML = tabelHtml;
+      setTimeout(() => window.print(), 300);
     }
   </script>
 </body>
