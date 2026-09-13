@@ -1221,73 +1221,84 @@
       setTimeout(() => window.print(), 300);
     }
 
-    async function cetakThermalUtangPembeli(namaPembeli) {
-      let rawDataPembeli = cacheDataRekap.rekapPembeliBulanan || [];
-      let listTrxUtang = [];
-      let totalSisaUtang = 0;
+  async function cetakThermalUtangPembeli(namaPembeli) {
+  let rawDataPembeli = cacheDataRekap.rekapPembeliBulanan || [];
+  let listTrxUtang = [];
+  let totalSisaUtang = 0;
 
-      rawDataPembeli.forEach(pb => {
-        if (pb.pembeli === namaPembeli) {
-          pb.listTransaksi.forEach(trx => {
-            if (trx.kembali < 0) {
-              totalSisaUtang += Math.abs(trx.kembali);
-              listTrxUtang.push(trx);
-            } else if (trx.items.includes("PELUNASAN UTANG")) {
-              totalSisaUtang -= Number(trx.bayar || 0);
-            }
-          });
+  rawDataPembeli.forEach(pb => {
+    if (pb.pembeli === namaPembeli) {
+      pb.listTransaksi.forEach(trx => {
+        if (trx.kembali < 0) {
+          totalSisaUtang += Math.abs(trx.kembali);
+          listTrxUtang.push(trx);
+        } else if (trx.items.includes("PELUNASAN UTANG")) {
+          totalSisaUtang -= Number(trx.bayar || 0);
         }
       });
-
-      if (listTrxUtang.length === 0) return;
-
-      const ESC = '\x1B';
-      const GS = '\x1D';
-      const INIT = ESC + '@';
-      const CENTER = ESC + 'a' + '\x01';
-      const LEFT = ESC + 'a' + '\x00';
-      const BOLD_ON = ESC + 'E' + '\x01';
-      const BOLD_OFF = ESC + 'E' + '\x00';
-      const CUT = GS + 'V' + '\x41' + '\x03';
-
-      let textPrint = INIT;
-      textPrint += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
-      textPrint += "Jl. Raya Jagapura Lor - Nyibanda\n";
-      textPrint += "RINCIAN DAFTAR TUNGGAKAN UTANG\n";
-      textPrint += "--------------------------------\n";
-      textPrint += LEFT;
-      textPrint += `Pelanggan: ${namaPembeli}\n`;
-      textPrint += `Cetak    : ${new Date().toLocaleString('id-ID')}\n`;
-      textPrint += "--------------------------------\n";
-
-      listTrxUtang.forEach((trx, i) => {
-        textPrint += `${i + 1}. Tgl: ${trx.tanggal}\n`;
-        textPrint += `   ${trx.items}\n`;
-        textPrint += `   Utang: Rp ${Math.abs(trx.kembali).toLocaleString('id-ID')}\n`;
-        textPrint += "--------------------------------\n";
-      });
-
-      textPrint += BOLD_ON + `TOTAL SISA UTANG: Rp ${totalSisaUtang.toLocaleString('id-ID')}\n` + BOLD_OFF;
-      textPrint += "--------------------------------\n";
-      textPrint += CENTER + "** MOHON SEGERA DILUNASI **\n\n";
-
-      textPrint += CENTER + "Kunjungi Situs Kami\n";
-      textPrint += CENTER + "Scann QR Kode Dibawah ini\n\n";
-      const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
-      const storeLength = qrUrl.length + 3;
-      const pL = String.fromCharCode(storeLength % 256);
-      const pH = String.fromCharCode(Math.floor(storeLength / 256));
-
-      textPrint += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
-      textPrint += GS + '(k' + '\x03\x00\x31\x43\x05';
-      textPrint += GS + '(k' + '\x03\x00\x31\x45\x30';
-      textPrint += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
-      textPrint += GS + '(k' + '\x03\x00\x31\x51\x30';
-      textPrint += "\n" + CUT;
-
-      await kirimDataRawKePrinter(textPrint);
     }
+  });
 
+  if (listTrxUtang.length === 0) {
+    alert("Tidak ada data tunggakan untuk pelanggan ini.");
+    return;
+  }
+
+  const ESC = '\x1B';
+  const GS = '\x1D';
+  const INIT = ESC + '@';
+  const CENTER = ESC + 'a' + '\x01';
+  const LEFT = ESC + 'a' + '\x00';
+  const BOLD_ON = ESC + 'E' + '\x01';
+  const BOLD_OFF = ESC + 'E' + '\x00';
+  const CUT = GS + 'V' + '\x41' + '\x03';
+
+  let textPrint = INIT;
+  // Header Struk yang disamakan dengan kasir
+  textPrint += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
+  textPrint += "Jl. Raya Jagapura Lor - Nyibanda\n";
+  textPrint += "REKAPITULASI TUNGGAKAN UTANG\n";
+  textPrint += "--------------------------------\n";
+  textPrint += LEFT;
+  textPrint += `Pelanggan : ${namaPembeli}\n`;
+  textPrint += `Tgl Cetak : ${new Date().toLocaleString('id-ID')}\n`;
+  textPrint += "--------------------------------\n";
+
+  // Rincian Item / Transaksi Hutang
+  listTrxUtang.forEach((trx, i) => {
+    textPrint += `${i + 1}. Tgl: ${trx.tanggal} ${trx.waktu ? '(' + trx.waktu + ')' : ''}\n`;
+    textPrint += `   Item: ${trx.items}\n`;
+    textPrint += `   Sisa: Rp ${Math.abs(trx.kembali).toLocaleString('id-ID')}\n`;
+    textPrint += "--------------------------------\n";
+  });
+
+  // Bagian Total Sisa Hutang
+  textPrint += CENTER + BOLD_ON;
+  textPrint += `TOTAL KESELURUHAN SISA UTANG\n`;
+  textPrint += `Rp ${totalSisaUtang.toLocaleString('id-ID')}\n`;
+  textPrint += BOLD_OFF + "--------------------------------\n";
+  
+  // Footer & Informasi Tambahan
+  textPrint += CENTER + "Mohon Segera Dilunasi\n";
+  textPrint += "Terima Kasih Atas Kunjungan Anda\n\n";
+  
+  textPrint += CENTER + "Kunjungi Situs Kami\n";
+  textPrint += CENTER + "Scan QR Code Dibawah Ini\n\n";
+
+  const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
+  const storeLength = qrUrl.length + 3;
+  const pL = String.fromCharCode(storeLength % 256);
+  const pH = String.fromCharCode(Math.floor(storeLength / 256));
+
+  textPrint += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+  textPrint += GS + '(k' + '\x03\x00\x31\x43\x05';
+  textPrint += GS + '(k' + '\x03\x00\x31\x45\x30';
+  textPrint += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+  textPrint += GS + '(k' + '\x03\x00\x31\x51\x30';
+  textPrint += "\n" + CUT;
+
+  await kirimDataRawKePrinter(textPrint);
+}
     function muatDataPelangganKosongan() {
       showLoading(true, "Memuat data pelanggan kosongan...");
       fetch(`${API_URL}?action=getPelangganKosongan`, { method: "GET", redirect: "follow" })
