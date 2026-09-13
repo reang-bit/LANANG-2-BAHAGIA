@@ -2051,6 +2051,9 @@
                 <button onclick="pastikanDataRekapSiap(() => cetakRekapSpesifik('harian', ${index}))" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow" title="Cetak Standar">
                   <span>🖨️</span> Cetak
                 </button>
+                <button onclick="pastikanDataRekapSiap(() => cetakThermalRekapSpesifik('harian', ${index}))" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow" title="Cetak Thermal Bluetooth">
+  <span>🦷</span> Thermal
+</button>
               </div>
             </div>
             <div class="p-4 space-y-2">
@@ -2109,6 +2112,9 @@
                 <button onclick="pastikanDataRekapSiap(() => cetakRekapSpesifik('bulanan', ${index}))" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow" title="Cetak Standar">
                   <span>🖨️</span> Cetak
                 </button>
+                <button onclick="pastikanDataRekapSiap(() => cetakThermalRekapSpesifik('harian', ${index}))" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow" title="Cetak Thermal Bluetooth">
+  <span>🦷</span> Thermal
+</button>
               </div>
             </div>
             <div class="p-4 space-y-2">
@@ -2193,6 +2199,9 @@
                 <button onclick="pastikanDataRekapSiap(() => cetakRekapSpesifik('pembeli', ${index}))" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow" title="Cetak Standar">
                   <span>🖨️</span> Cetak
                 </button>
+                <button onclick="pastikanDataRekapSiap(() => cetakThermalRekapSpesifik('harian', ${index}))" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow" title="Cetak Thermal Bluetooth">
+  <span>🦷</span> Thermal
+</button>
               </div>
             </div>
             <div class="p-4 space-y-2">
@@ -2496,6 +2505,93 @@
       document.getElementById('printKontenTabel').innerHTML = tabelHtml;
       setTimeout(() => window.print(), 300);
     }
+    async function cetakThermalRekapSpesifik(tipe, index) {
+  let data;
+  let judulLaporan = "";
+  
+  if (tipe === 'harian') {
+    data = filteredDataRekapCache.harian[index];
+    judulLaporan = `REKAP HARIAN: ${data.tanggal}`;
+  } else if (tipe === 'bulanan') {
+    data = filteredDataRekapCache.bulanan[index];
+    judulLaporan = `REKAP BULANAN: ${data.bulan}`;
+  } else if (tipe === 'pembeli') {
+    data = filteredDataRekapCache.rekapPembeliBulanan[index];
+    judulLaporan = `REKAP PELANGGAN: ${data.pembeli}`;
+  }
+
+  if (!data || !data.listTransaksi || data.listTransaksi.length === 0) {
+    alert("Data transaksi tidak tersedia untuk dicetak.");
+    return;
+  }
+
+  const ESC = '\x1B';
+  const GS = '\x1D';
+  const INIT = ESC + '@';
+  const CENTER = ESC + 'a' + '\x01';
+  const LEFT = ESC + 'a' + '\x00';
+  const BOLD_ON = ESC + 'E' + '\x01';
+  const BOLD_OFF = ESC + 'E' + '\x00';
+  const CUT = GS + 'V' + '\x41' + '\x03';
+
+  let textPrint = INIT;
+  // Header Struk Konsisten
+  textPrint += CENTER + BOLD_ON + "LANANG 2 BAHAGIA\n" + BOLD_OFF;
+  textPrint += "Jl. Raya Jagapura Lor - Nyibanda\n";
+  textPrint += `${judulLaporan}\n`;
+  textPrint += "--------------------------------\n";
+  textPrint += LEFT;
+  textPrint += `Cetak : ${new Date().toLocaleString('id-ID')}\n`;
+  textPrint += "--------------------------------\n";
+
+  let totalSemuaBelanja = 0;
+  let totalSemuaBayar = 0;
+
+  // Rincian Daftar Transaksi dalam Rekap
+  data.listTransaksi.forEach((trx, i) => {
+    const belanja = Number(trx.total || 0);
+    const bayar = Number(trx.bayar || 0);
+    totalSemuaBelanja += belanja;
+    totalSemuaBayar += bayar;
+
+    textPrint += `${i + 1}. Tgl: ${trx.tanggal} ${trx.waktu || ''}\n`;
+    if (tipe !== 'pembeli') {
+      textPrint += `   Plg : ${trx.pembeli || 'Umum'}\n`;
+    }
+    textPrint += `   Item: ${trx.items}\n`;
+    textPrint += `   Total: Rp ${belanja.toLocaleString('id-ID')}\n`;
+    textPrint += `   Bayar: Rp ${bayar.toLocaleString('id-ID')}\n`;
+    textPrint += "--------------------------------\n";
+  });
+
+  // Bagian Total Keseluruhan Rekap
+  textPrint += CENTER + BOLD_ON;
+  textPrint += `TOTAL KESELURUHAN\n`;
+  textPrint += `Belanja : Rp ${totalSemuaBelanja.toLocaleString('id-ID')}\n`;
+  textPrint += `Bayar   : Rp ${totalSemuaBayar.toLocaleString('id-ID')}\n`;
+  textPrint += BOLD_OFF + "--------------------------------\n";
+  
+  // Footer & Informasi Tambahan
+  textPrint += CENTER + "Laporan Sah & Tercatat Sistem\n";
+  textPrint += "Terima Kasih\n\n";
+  
+  textPrint += CENTER + "Kunjungi Situs Kami\n";
+  textPrint += CENTER + "Scan QR Code Dibawah Ini\n\n";
+
+  const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
+  const storeLength = qrUrl.length + 3;
+  const pL = String.fromCharCode(storeLength % 256);
+  const pH = String.fromCharCode(Math.floor(storeLength / 256));
+
+  textPrint += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+  textPrint += GS + '(k' + '\x03\x00\x31\x43\x05';
+  textPrint += GS + '(k' + '\x03\x00\x31\x45\x30';
+  textPrint += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+  textPrint += GS + '(k' + '\x03\x00\x31\x51\x30';
+  textPrint += "\n" + CUT;
+
+  await kirimDataRawKePrinter(textPrint);
+}
   </script>
 </body>
 </html>
