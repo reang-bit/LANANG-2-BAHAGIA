@@ -1420,7 +1420,7 @@
       await kirimDataRawKePrinter(textPrint);
     }
 
-    async function cetakThermalRekapHarian(tanggal) {
+   async function cetakThermalRekapHarian(tanggal) {
       const found = filteredDataRekapCache.harian.find(h => h.tanggal === tanggal);
       if (!found) {
         alert("Data rekap harian tidak ditemukan!");
@@ -1431,23 +1431,50 @@
       textPrint += "\x1B\x40";
       textPrint += CENTER;
       textPrint += "LANANG 2 BAHAGIA\n";
-      textPrint += "REKAPITULASI HARIAN\n";
-      textPrint += `Tgl: ${found.tanggal}\n`;
+      textPrint += "Jl. Raya Jagapura Lor - Nyibanda\n";
+      textPrint += "REKAPITULASI HARIAN RINCI\n";
+      textPrint += `Tanggal: ${found.tanggal}\n`;
       textPrint += "--------------------------------\n";
       textPrint += LEFT;
 
       let totalOmset = 0;
+      let totalBayarSemua = 0;
+      let totalHutangSemua = 0;
+
       found.listTransaksi.forEach((tx, index) => {
         totalOmset += tx.total;
-        textPrint += `${index + 1}. ${tx.waktu || ''} - ${tx.pembeli || 'Umum'}\n`;
-        textPrint += `   Item: ${tx.items}\n`;
-        textPrint += `   Total: Rp ${(tx.total || 0).toLocaleString('id-ID')}\n`;
+        totalBayarSemua += tx.bayar;
+        if (tx.kembali < 0) totalHutangSemua += Math.abs(tx.kembali);
+
+        textPrint += `[${index + 1}] ${tx.waktu || ''} | ${tx.pembeli || 'Umum'}\n`;
+        if (tx.catatan) {
+          textPrint += `    Info: ${tx.catatan}\n`;
+        }
+        
+        // Rincian item seperti struk kasir
+        if (tx.items) {
+          const itemParts = tx.items.split(',');
+          itemParts.forEach(part => {
+            textPrint += `    - ${part.trim()}\n`;
+          });
+        }
+
+        textPrint += `    Total  : Rp ${(tx.total || 0).toLocaleString('id-ID')}\n`;
+        textPrint += `    Bayar  : Rp ${(tx.bayar || 0).toLocaleString('id-ID')}\n`;
+        if (tx.kembali >= 0) {
+          textPrint += `    Kembali: Rp ${(tx.kembali || 0).toLocaleString('id-ID')}\n`;
+        } else {
+          textPrint += `    Hutang : Rp ${Math.abs(tx.kembali || 0).toLocaleString('id-ID')}\n`;
+        }
+        textPrint +="--------------------------------\n";
       });
 
-      textPrint += "--------------------------------\n";
       textPrint += CENTER;
-      textPrint += `TOTAL OMSET HARIAN:\n`;
-      textPrint += `Rp ${totalOmset.toLocaleString('id-ID')}\n`;
+      textPrint += `REKAPITULASI TOTAL HARIAN:\n`;
+      textPrint += LEFT;
+      textPrint += `Total Omset  : Rp ${totalOmset.toLocaleString('id-ID')}\n`;
+      textPrint += `Total Bayar  : Rp ${totalBayarSemua.toLocaleString('id-ID')}\n`;
+      textPrint += `Total Hutang : Rp ${totalHutangSemua.toLocaleString('id-ID')}\n`;
       textPrint += "--------------------------------\n";
       textPrint += CENTER + "**Terimakasih**\n\n" + CUT;
 
@@ -1465,27 +1492,108 @@
       textPrint += "\x1B\x40";
       textPrint += CENTER;
       textPrint += "LANANG 2 BAHAGIA\n";
-      textPrint += "REKAPITULASI BULANAN\n";
+      textPrint += "Jl. Raya Jagapura Lor - Nyibanda\n";
+      textPrint += "REKAPITULASI BULANAN RINCI\n";
       textPrint += `Bulan: ${found.bulan}\n`;
       textPrint += "--------------------------------\n";
       textPrint += LEFT;
 
       let totalOmsetBulanan = 0;
+      let totalBayarBulanan = 0;
+      let totalHutangBulanan = 0;
+
       found.listTransaksi.forEach((tx, index) => {
         totalOmsetBulanan += tx.total;
-        textPrint += `${index + 1}. ${tx.tanggal} | ${tx.pembeli}\n`;
-        textPrint += `   Rp ${(tx.total || 0).toLocaleString('id-ID')}\n`;
+        totalBayarBulanan += tx.bayar;
+        if (tx.kembali < 0) totalHutangBulanan += Math.abs(tx.kembali);
+
+        textPrint += `[${index + 1}] ${tx.tanggal} ${tx.waktu || ''}\n`;
+        textPrint += `    Pembeli: ${tx.pembeli || 'Umum'}\n`;
+        
+        if (tx.items) {
+          const itemParts = tx.items.split(',');
+          itemParts.forEach(part => {
+            textPrint += `    - ${part.trim()}\n`;
+          });
+        }
+
+        textPrint += `    Total  : Rp ${(tx.total || 0).toLocaleString('id-ID')}\n`;
+        textPrint += `    Bayar  : Rp ${(tx.bayar || 0).toLocaleString('id-ID')}\n`;
+        if (tx.kembali >= 0) {
+          textPrint += `    Kembali: Rp ${(tx.kembali || 0).toLocaleString('id-ID')}\n`;
+        } else {
+          textPrint += `    Hutang : Rp ${Math.abs(tx.kembali || 0).toLocaleString('id-ID')}\n`;
+        }
+        textPrint += "--------------------------------\n";
       });
 
-      textPrint += "--------------------------------\n";
       textPrint += CENTER;
-      textPrint += `TOTAL OMSET BULANAN:\n`;
-      textPrint += `Rp ${totalOmsetBulanan.toLocaleString('id-ID')}\n`;
+      textPrint += `REKAPITULASI TOTAL BULANAN:\n`;
+      textPrint += LEFT;
+      textPrint += `Total Omset  : Rp ${totalOmsetBulanan.toLocaleString('id-ID')}\n`;
+      textPrint += `Total Bayar  : Rp ${totalBayarBulanan.toLocaleString('id-ID')}\n`;
+      textPrint += `Total Hutang : Rp ${totalHutangBulanan.toLocaleString('id-ID')}\n`;
       textPrint += "--------------------------------\n";
       textPrint += CENTER + "**Terimakasih**\n\n" + CUT;
 
       await kirimDataRawKePrinter(textPrint);
     }
+
+    async function cetakThermalRekapPembeli(pembeliNama) {
+      const found = filteredDataRekapCache.rekapPembeliBulanan.find(p => p.pembeli === pembeliNama);
+      if (!found) {
+        alert("Data rekap pembeli tidak ditemukan!");
+        return;
+      }
+
+      let textPrint = "";
+      textPrint += "\x1B\x40";
+      textPrint += CENTER;
+      textPrint += "LANANG 2 BAHAGIA\n";
+      textPrint += "Jl. Raya Jagapura Lor - Nyibanda\n";
+      textPrint += "REKAPITULASI PER PEMBELI\n";
+      textPrint += `Nama: ${found.pembeli}\n`;
+      textPrint += "--------------------------------\n";
+      textPrint += LEFT;
+
+      let totalBelanjaPembeli = 0;
+      let totalBayarPembeli = 0;
+      let totalHutangPembeli = 0;
+
+      found.listTransaksi.forEach((tx, index) => {
+        totalBelanjaPembeli += tx.total;
+        totalBayarPembeli += tx.bayar;
+        if (tx.kembali < 0) totalHutangPembeli += Math.abs(tx.kembali);
+
+        textPrint += `[${index + 1}] ${tx.tanggal} ${tx.waktu || ''}\n`;
+        if (tx.items) {
+          const itemParts = tx.items.split(',');
+          itemParts.forEach(part => {
+            textPrint += `    - ${part.trim()}\n`;
+          });
+        }
+        textPrint += `    Total  : Rp ${(tx.total || 0).toLocaleString('id-ID')}\n`;
+        textPrint += `    Bayar  : Rp ${(tx.bayar || 0).toLocaleString('id-ID')}\n`;
+        if (tx.kembali >= 0) {
+          textPrint += `    Kembali: Rp ${(tx.kembali || 0).toLocaleString('id-ID')}\n`;
+        } else {
+          textPrint += `    Hutang : Rp ${Math.abs(tx.kembali || 0).toLocaleString('id-ID')}\n`;
+        }
+        textPrint += "--------------------------------\n";
+      });
+
+      textPrint += CENTER;
+      textPrint += `TOTAL KESELURUHAN PEMBELI:\n`;
+      textPrint += LEFT;
+      textPrint += `Total Belanja: Rp ${totalBelanjaPembeli.toLocaleString('id-ID')}\n`;
+      textPrint += `Total Bayar  : Rp ${totalBayarPembeli.toLocaleString('id-ID')}\n`;
+      textPrint += `Total Hutang : Rp ${totalHutangPembeli.toLocaleString('id-ID')}\n`;
+      textPrint += "--------------------------------\n";
+      textPrint += CENTER + "**Terimakasih**\n\n" + CUT;
+
+      await kirimDataRawKePrinter(textPrint);
+    }
+
 
     async function cetakThermalDetailKosongan() {
       if (!selectedPelangganKosonganData) return;
@@ -2238,47 +2346,46 @@
               <h3 class="text-base font-extrabold text-slate-900">👤 Pembeli: ${p.pembeli} <span class="text-xs font-normal text-slate-500">(${p.bulan})</span></h3>
               <p class="text-xs text-slate-500">Total Belanja: <strong class="text-slate-900 font-black">Rp ${p.totalBelanja.toLocaleString('id-ID')}</strong></p>
             </div>
-            <button onclick="cetakBiasaRekap('pembeli', '${p.pembeli}', '${p.bulan}')" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1.5">
-              <span>🖨️</span> Print Rekap Pembeli
-            </button>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button onclick="cetakThermalRekapPembeli('${p.pembeli}')" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1.5">
+                <span>🦷</span> Print Thermal Pembeli
+              </button>
+              <button onclick="cetakBiasaRekap('pembeli', '${p.pembeli}', '${p.bulan}')" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1.5">
+                <span>🖨️</span> Print Rekap Pembeli
+              </button>
+            </div>
           </div>
 
           <div class="grid grid-cols-3 gap-3 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-100">
             <div>
-              <p class="text-slate-400 font-bold uppercase text-[10px]">Total Belanja</p>
-              <p class="font-black text-slate-900 mt-0.5">Rp ${p.totalBelanja.toLocaleString('id-ID')}</p>
+              <p class="text-slate-500 font-medium">Total Transaksi</p>
+              <p class="text-slate-900 font-extrabold text-sm">${p.listTransaksi ? p.listTransaksi.length : 0}x</p>
             </div>
             <div>
-              <p class="text-slate-400 font-bold uppercase text-[10px]">Total Dibayar</p>
-              <p class="font-black text-emerald-600 mt-0.5">Rp ${p.totalBayar.toLocaleString('id-ID')}</p>
+              <p class="text-slate-500 font-medium">Total Bayar</p>
+              <p class="text-emerald-600 font-extrabold text-sm">Rp ${(p.totalBayar || 0).toLocaleString('id-ID')}</p>
             </div>
             <div>
-              <p class="text-slate-400 font-bold uppercase text-[10px]">Kembalian / Sisa Hutang</p>
-              <p class="font-black ${p.totalHutangPiutang >= 0 ? 'text-slate-900' : 'text-rose-600'} mt-0.5">
-                Rp ${p.totalHutangPiutang.toLocaleString('id-ID')}
-              </p>
+              <p class="text-slate-500 font-medium">Sisa Hutang</p>
+              <p class="text-rose-600 font-extrabold text-sm">Rp ${(p.totalHutang || 0).toLocaleString('id-ID')}</p>
             </div>
           </div>
 
-          <!-- Tabel Riwayat Transaksi per Pembeli -->
-          <div class="mt-3 pt-3 border-t border-slate-100">
-            <p class="text-xs font-bold text-slate-700 mb-2">📜 Riwayat Transaksi:</p>
-            <div class="overflow-x-auto border border-slate-200 rounded-xl">
-              <table class="w-full text-left border-collapse">
-                <thead>
-                  <tr class="bg-slate-100/70 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
-                    <th class="py-2 px-3">Tanggal / Waktu</th>
-                    <th class="py-2 px-3">Rincian Item</th>
-                    <th class="py-2 px-3 text-right">Total</th>
-                    <th class="py-2 px-3 text-right">Bayar</th>
-                    <th class="py-2 px-3 text-right">Kembali / Kurang</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                  ${transaksiRows}
-                </tbody>
-              </table>
-            </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider">
+                  <th class="py-2.5 px-3 font-bold">Waktu</th>
+                  <th class="py-2.5 px-3 font-bold">Item</th>
+                  <th class="py-2.5 px-3 font-bold text-right">Total</th>
+                  <th class="py-2.5 px-3 font-bold text-right">Bayar</th>
+                  <th class="py-2.5 px-3 font-bold text-right">Kembali/Hutang</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${transaksiRows}
+              </tbody>
+            </table>
           </div>
         `;
         container.appendChild(card);
