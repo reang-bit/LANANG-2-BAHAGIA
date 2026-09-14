@@ -1269,19 +1269,38 @@
     alert("Gagal konek Bluetooth: " + (err.message || err));
   }
 }
-    async function kirimDataRawKePrinter(data) {
-      if (!bluetoothCharacteristic) {
-        alert("Printer Thermal belum terhubung via Bluetooth!\nKlik tombol 'Connect Printer' terlebih dahulu.");
-        return;
+   async function kirimDataRawKePrinter(data) {
+  if (!bluetoothCharacteristic) {
+    alert("Printer Thermal belum terhubung via Bluetooth!\nKlik tombol 'Connect Printer' terlebih dahulu.");
+    return;
+  }
+
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(data);
+  
+  // Batasan aman ukuran chunk untuk BLE (biasanya 512 byte atau 100-120 byte untuk kestabilan)
+  const CHUNK_SIZE = 100; 
+
+  try {
+    for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+      const chunk = bytes.slice(i, i + CHUNK_SIZE);
+      
+      // Gunakan writeValue jika didukung, atau writeValueWithoutResponse jika printer mendukungnya
+      if (bluetoothCharacteristic.properties.writeWithoutResponse) {
+        await bluetoothCharacteristic.writeValueWithoutResponse(chunk);
+      } else {
+        await bluetoothCharacteristic.writeValue(chunk);
       }
-      const encoder = new TextEncoder();
-      try {
-        await bluetoothCharacteristic.writeValue(encoder.encode(data));
-      } catch (e) {
-        console.error("Gagal kirim data ke printer:", e);
-        alert("Gagal mengirim data ke printer.");
-      }
+      
+      // Jeda kecil antar chunk agar buffer printer tidak kewalahan
+      await new Promise(resolve => setTimeout(resolve, 30));
     }
+    console.log("Semua data berhasil dikirim ke printer thermal.");
+  } catch (e) {
+    console.error("Gagal kirim data ke printer:", e);
+    alert("Gagal mengirim data ke printer: " + (e.message || e));
+  }
+}
 
     async function cetakStrukThermal(pembeli, pelayan, items, total, bayar, kembali, kosongan) {
       const now = new Date();
