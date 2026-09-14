@@ -1517,6 +1517,87 @@
       await kirimDataRawKePrinter(textPrint);
     }
 
+    // Fungsi Cetak Thermal Rekap Harian
+async function cetakThermalRekapHarian(tanggalRekap, listTransaksi, totalOmset) {
+  const ESC = "\x1B";
+  const GS = "\x1D";
+  const CENTER = ESC + "\x61\x31";
+  const LEFT = ESC + "\x61\x30";
+  const CUT = "\x1D\x56\x42\x00";
+
+  let textPrint = "";
+  textPrint += "\x1B\x40"; // Init printer
+  textPrint += CENTER;
+  textPrint += "LANANG 2 BAHAGIA\n";
+  textPrint += "REKAPITULASI HARIAN\n";
+  textPrint += `Tgl: ${tanggalRekap}\n`;
+  textPrint += "--------------------------------\n";
+  textPrint += LEFT;
+
+  if (Array.isArray(listTransaksi) && listTransaksi.length > 0) {
+    listTransaksi.forEach((tx, index) => {
+      textPrint += `${index + 1}. ${tx.waktu || ''} - ${tx.pembeli || 'Umum'}\n`;
+      textPrint += `   Total: Rp ${(tx.total || 0).toLocaleString('id-ID')}\n`;
+    });
+  } else {
+    textPrint += "Tidak ada transaksi pada tanggal ini.\n";
+  }
+
+  textPrint += "--------------------------------\n";
+  textPrint += CENTER;
+  textPrint += `TOTAL OMSET HARIAN:\n`;
+  textPrint += `Rp ${(totalOmset || 0).toLocaleString('id-ID')}\n`;
+  textPrint += "--------------------------------\n";
+  textPrint += "**Terimakasih**\n\n" + CUT;
+
+  if (typeof kirimDataRawKePrinter === 'function') {
+    await kirimDataRawKePrinter(textPrint);
+  } else {
+    console.error("Fungsi kirimDataRawKePrinter belum didefinisikan.");
+  }
+}
+
+// Fungsi Cetak Thermal Rekap Bulanan
+async function cetakThermalRekapBulanan(bulanTahun, listRekapHarian, totalOmsetBulanan) {
+  const ESC = "\x1B";
+  const GS = "\x1D";
+  const CENTER = ESC + "\x61\x31";
+  const LEFT = ESC + "\x61\x30";
+  const CUT = "\x1D\x56\x42\x00";
+
+  let textPrint = "";
+  textPrint += "\x1B\x40"; // Init printer
+  textPrint += CENTER;
+  textPrint += "LANANG 2 BAHAGIA\n";
+  textPrint += "REKAPITULASI BULANAN\n";
+  textPrint += `Bulan: ${bulanTahun}\n`;
+  textPrint += "--------------------------------\n";
+  textPrint += LEFT;
+
+  if (Array.isArray(listRekapHarian) && listRekapHarian.length > 0) {
+    listRekapHarian.forEach((harian) => {
+      textPrint += `Tgl ${harian.tanggal}: ${harian.jumlahTransaksi} Transaksi\n`;
+      textPrint += `  Subtotal: Rp ${(harian.totalOmset || 0).toLocaleString('id-ID')}\n`;
+    });
+  } else {
+    textPrint += "Tidak ada data pada bulan ini.\n";
+  }
+
+  textPrint += "--------------------------------\n";
+  textPrint += CENTER;
+  textPrint += `TOTAL OMSET BULANAN:\n`;
+  textPrint += `Rp ${(totalOmsetBulanan || 0).toLocaleString('id-ID')}\n`;
+  textPrint += "--------------------------------\n";
+  textPrint += "**Terimakasih**\n\n" + CUT;
+
+  if (typeof kirimDataRawKePrinter === 'function') {
+    await kirimDataRawKePrinter(textPrint);
+  } else {
+    console.error("Fungsi kirimDataRawKePrinter belum didefinisikan.");
+  }
+}
+    
+
     function tambahBarangBaru(e) {
       e.preventDefault();
       const nama = document.getElementById('inputNamaBarang').value;
