@@ -1360,22 +1360,46 @@
     }
 
     async function cetakStrukThermalDetail(pembeli, items, total, bayar, kembali) {
+
+      const now = new Date();
+      const tglStr = now.toLocaleDateString('id-ID') + " " + now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+
       let textPrint = "";
-      textPrint += "\x1B\x40";
+      textPrint += "\x1B\x40"; // Init printer
       textPrint += CENTER;
       textPrint += "LANANG 2 BAHAGIA\n";
       textPrint += "Jl. Raya Jagapura Lor - Nyibanda\n";
       textPrint += "Solusi Kebutuhan Anda\n";
       textPrint += "--------------------------------\n";
+      textPrint += "RINCIAN BELANJA\n";
       textPrint += LEFT;
+      textPrint += `Tgl   : ${tglStr}\n`;
+      textPrint += `Kasir : ${pelayan}\n`;
       textPrint += `Pembeli: ${pembeli}\n`;
-      textPrint += `Item   : ${items}\n`;
+      textPrint += "--------------------------------\n";
+
+      items.forEach(it => {
+        textPrint += `${it.nama}\n`;
+        const sub = it.harga * it.qty;
+        textPrint += `  ${it.qty} x ${it.harga.toLocaleString('id-ID')} = ${sub.toLocaleString('id-ID')}\n`;
+      });
+
+      if (kosongan) {
+        textPrint += `Catatan: ${kosongan}\n`;
+      }
+
       textPrint += "--------------------------------\n";
       textPrint += `Total   : Rp ${total.toLocaleString('id-ID')}\n`;
       textPrint += `Bayar   : Rp ${bayar.toLocaleString('id-ID')}\n`;
-      textPrint += `Kembali : Rp ${kembali.toLocaleString('id-ID')}\n`;
+
+      if (kembali >= 0) {
+        textPrint += `Kembali : Rp ${kembali.toLocaleString('id-ID')}\n`;
+      } else {
+        textPrint += `HUTANG  : Rp ${Math.abs(kembali).toLocaleString('id-ID')}\n`;
+      }
+
       textPrint += "--------------------------------\n";
-      textPrint += CENTER + "**Terima Kasih**\n";
+      textPrint += CENTER + "**Terimakasih**\n";
       textPrint += CENTER + "Kunjungi Situs Kami\n";
       textPrint += CENTER + "Scann QR Kode Dibawah ini\n\n";
       const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
