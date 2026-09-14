@@ -1359,64 +1359,78 @@
       await kirimDataRawKePrinter(textPrint);
     }
 
-    async function cetakStrukThermalDetail(pembeli, items, total, bayar, kembali) {
+    async function cetakStrukThermalDetail(pembeli, items, total, bayar, kembali, pelayan = "Kasir", kosongan = "") {
+  // Definisi perintah ESC/POS jika belum ada di file utama
+  const ESC = "\x1B";
+  const GS = "\x1D";
+  const CENTER = ESC + "\x61\x31";
+  const LEFT = ESC + "\x61\x30";
+  const CUT = "\x1D\x56\x42\x00"; // Perintah potong kertas
 
-      const now = new Date();
-      const tglStr = now.toLocaleDateString('id-ID') + " " + now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+  const now = new Date();
+  const tglStr = now.toLocaleDateString('id-ID') + " " + now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
 
-      let textPrint = "";
-      textPrint += "\x1B\x40"; // Init printer
-      textPrint += CENTER;
-      textPrint += "LANANG 2 BAHAGIA\n";
-      textPrint += "Jl. Raya Jagapura Lor - Nyibanda\n";
-      textPrint += "Solusi Kebutuhan Anda\n";
-      textPrint += "--------------------------------\n";
-      textPrint += "RINCIAN BELANJA\n";
-      textPrint += LEFT;
-      textPrint += `Tgl   : ${tglStr}\n`;
-      textPrint += `Kasir : ${pelayan}\n`;
-      textPrint += `Pembeli: ${pembeli}\n`;
-      textPrint += "--------------------------------\n";
+  let textPrint = "";
+  textPrint += "\x1B\x40"; // Init printer
+  textPrint += CENTER;
+  textPrint += "LANANG 2 BAHAGIA\n";
+  textPrint += "Jl. Raya Jagapura Lor - Nyibanda\n";
+  textPrint += "Solusi Kebutuhan Anda\n";
+  textPrint += "--------------------------------\n";
+  textPrint += "RINCIAN BELANJA\n";
+  textPrint += LEFT;
+  textPrint += `Tgl   : ${tglStr}\n`;
+  textPrint += `Kasir : ${pelayan}\n`;
+  textPrint += `Pembeli: ${pembeli}\n`;
+  textPrint += "--------------------------------\n";
 
-      items.forEach(it => {
-        textPrint += `${it.nama}\n`;
-        const sub = it.harga * it.qty;
-        textPrint += `  ${it.qty} x ${it.harga.toLocaleString('id-ID')} = ${sub.toLocaleString('id-ID')}\n`;
-      });
+  if (Array.isArray(items)) {
+    items.forEach(it => {
+      textPrint += `${it.nama}\n`;
+      const sub = (it.harga || 0) * (it.qty || 0);
+      textPrint += `  ${it.qty} x ${(it.harga || 0).toLocaleString('id-ID')} = ${sub.toLocaleString('id-ID')}\n`;
+    });
+  }
 
-      if (kosongan) {
-        textPrint += `Catatan: ${kosongan}\n`;
-      }
+  if (kosongan) {
+    textPrint += `Catatan: ${kosongan}\n`;
+  }
 
-      textPrint += "--------------------------------\n";
-      textPrint += `Total   : Rp ${total.toLocaleString('id-ID')}\n`;
-      textPrint += `Bayar   : Rp ${bayar.toLocaleString('id-ID')}\n`;
+  textPrint += "--------------------------------\n";
+  textPrint += `Total   : Rp ${(total || 0).toLocaleString('id-ID')}\n`;
+  textPrint += `Bayar   : Rp ${(bayar || 0).toLocaleString('id-ID')}\n`;
 
-      if (kembali >= 0) {
-        textPrint += `Kembali : Rp ${kembali.toLocaleString('id-ID')}\n`;
-      } else {
-        textPrint += `HUTANG  : Rp ${Math.abs(kembali).toLocaleString('id-ID')}\n`;
-      }
+  if (kembali >= 0) {
+    textPrint += `Kembali : Rp ${(kembali || 0).toLocaleString('id-ID')}\n`;
+  } else {
+    textPrint += `HUTANG  : Rp ${Math.abs(kembali || 0).toLocaleString('id-ID')}\n`;
+  }
 
-      textPrint += "--------------------------------\n";
-      textPrint += CENTER + "**Terimakasih**\n";
-      textPrint += CENTER + "Kunjungi Situs Kami\n";
-      textPrint += CENTER + "Scann QR Kode Dibawah ini\n\n";
-      const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
-      const storeLength = qrUrl.length + 3;
-      const pL = String.fromCharCode(storeLength % 256);
-      const pH = String.fromCharCode(Math.floor(storeLength / 256));
+  textPrint += "--------------------------------\n";
+  textPrint += CENTER + "**Terimakasih**\n";
+  textPrint += CENTER + "Kunjungi Situs Kami\n";
+  textPrint += CENTER + "Scan QR Kode Dibawah ini\n\n";
 
-      textPrint += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
-      textPrint += GS + '(k' + '\x03\x00\x31\x43\x05';
-      textPrint += GS + '(k' + '\x03\x00\x31\x45\x30';
-      textPrint += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
-      textPrint += GS + '(k' + '\x03\x00\x31\x51\x30';
-      textPrint += "\n" + CUT;
+  // Bagian cetak QR Code ESC/POS
+  const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
+  const storeLength = qrUrl.length + 3;
+  const pL = String.fromCharCode(storeLength % 256);
+  const pH = String.fromCharCode(Math.floor(storeLength / 256));
 
-      await kirimDataRawKePrinter(textPrint);
-    }
+  textPrint += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+  textPrint += GS + '(k' + '\x03\x00\x31\x43\x05';
+  textPrint += GS + '(k' + '\x03\x00\x31\x45\x30';
+  textPrint += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+  textPrint += GS + '(k' + '\x03\x00\x31\x51\x30';
+  textPrint += "\n" + CUT;
 
+  // Pastikan fungsi kirimDataRawKePrinter tersedia
+  if (typeof kirimDataRawKePrinter === 'function') {
+    await kirimDataRawKePrinter(textPrint);
+  } else {
+    console.error("Fungsi kirimDataRawKePrinter belum didefinisikan.");
+  }
+}
     async function cetakThermalDetailKosongan() {
       if (!selectedPelangganKosonganData) return;
       const data = selectedPelangganKosonganData;
