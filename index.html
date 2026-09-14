@@ -1359,12 +1359,12 @@
       await kirimDataRawKePrinter(textPrint);
     }
 
-    async function cetakStrukThermalDetail(pembeli, items, total, bayar, kembali, pelayan = "-", kosongan = "") {
+   async function cetakStrukThermalDetail(pembeli, items, total, bayar, kembali, pelayan = "-", kosongan = "") {
       const now = new Date();
       const tglStr = now.toLocaleDateString('id-ID') + " " + now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
 
       let textPrint = "";
-      textPrint += "\x1B\x40"; 
+      textPrint += "\x1B\x40"; // Init printer
       textPrint += CENTER;
       textPrint += "LANANG 2 BAHAGIA\n";
       textPrint += "Jl. Raya Jagapura Lor - Nyibanda\n";
@@ -1394,7 +1394,8 @@
 
       textPrint += "--------------------------------\n";
       textPrint += CENTER + "**Terimakasih**\n";
-      textPrint += CENTER + "Scan QR Kode Dibawah ini\n\n";
+      textPrint += CENTER + "Kunjungi Situs Kami\n";
+      textPrint += CENTER + "Scann QR Kode Dibawah ini\n\n";
 
       const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
       const storeLength = qrUrl.length + 3;
