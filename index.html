@@ -1473,8 +1473,9 @@
       textPrint += `Cetak : ${tglStr}\n`;
       textPrint += `Nama  : ${pembeli}\n`;
       textPrint += "--------------------------------\n";
+      textPrint += CENTER;
       textPrint += "DAFTAR TRANSAKSI BELUM LUNAS:\n";
-
+      textPrint += LEFT;
       listTransaksiStr.forEach(t => {
         textPrint += `- ${t.tanggal} (${t.waktu})\n`;
         textPrint += `  ${t.items}\n`;
@@ -1485,6 +1486,7 @@
       textPrint += `TOTAL UTANG : Rp ${totalHutang.toLocaleString('id-ID')}\n`;
       textPrint += "--------------------------------\n";
       textPrint += CENTER + "Terima Kasih Atas Kerjasamanya\n";
+      textPrint += CENTER + "Kunjungi Situs Kami\n";
       textPrint += CENTER + "Scann QR Kode Dibawah ini\n\n";
       const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
       const storeLength = qrUrl.length + 3;
