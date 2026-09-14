@@ -1359,12 +1359,12 @@
       await kirimDataRawKePrinter(textPrint);
     }
 
-   async function cetakStrukThermalDetail(pembeli, items, total, bayar, kembali, pelayan = "-", kosongan = "") {
+   async function cetakStrukThermalDetail(pembeli, itemsStr, total, bayar, kembali, pelayan = "-", kosongan = "") {
       const now = new Date();
       const tglStr = now.toLocaleDateString('id-ID') + " " + now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
 
       let textPrint = "";
-      textPrint += "\x1B\x40"; // Init printer
+      textPrint += "\x1B\x40"; 
       textPrint += CENTER;
       textPrint += "LANANG 2 BAHAGIA\n";
       textPrint += "Jl. Raya Jagapura Lor - Nyibanda\n";
@@ -1376,7 +1376,16 @@
       textPrint += `Kasir : ${pelayan}\n`;
       textPrint += `Pembeli: ${pembeli}\n`;
       textPrint += "--------------------------------\n";
-      textPrint += `${items}\n`;
+
+      // Memecah item terperinci berdasarkan string item atau format array
+      if (typeof itemsStr === 'string' && itemsStr.includes(',')) {
+        const itemArray = itemsStr.split(',');
+        itemArray.forEach(it => {
+          textPrint += `${it.trim()}\n`;
+        });
+      } else {
+        textPrint += `${itemsStr}\n`;
+      }
 
       if (kosongan) {
         textPrint += `Catatan: ${kosongan}\n`;
@@ -1395,7 +1404,7 @@
       textPrint += "--------------------------------\n";
       textPrint += CENTER + "**Terimakasih**\n";
       textPrint += CENTER + "Kunjungi Situs Kami\n";
-      textPrint += CENTER + "Scann QR Kode Dibawah ini\n\n";
+      textPrint += CENTER + "Scan QR Kode Dibawah ini\n\n";
 
       const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
       const storeLength = qrUrl.length + 3;
@@ -1411,7 +1420,6 @@
 
       await kirimDataRawKePrinter(textPrint);
     }
-
     // FUNGSI CETAK THERMAL REKAP HARIAN
     async function cetakThermalRekapHarian(tanggal) {
       const found = filteredDataRekapCache.harian.find(h => h.tanggal === tanggal);
