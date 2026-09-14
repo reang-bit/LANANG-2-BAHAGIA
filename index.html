@@ -1377,7 +1377,6 @@
       textPrint += `Pembeli: ${pembeli}\n`;
       textPrint += "--------------------------------\n";
 
-      // Parsing string items kembali ke format per item jika memungkinkan, atau cetak perinciannya
       if (typeof itemsStr === 'string' && itemsStr.includes('x)')) {
         const itemParts = itemsStr.split(',');
         itemParts.forEach(part => {
@@ -1421,7 +1420,6 @@
       await kirimDataRawKePrinter(textPrint);
     }
 
-    // FUNGSI CETAK THERMAL REKAP HARIAN
     async function cetakThermalRekapHarian(tanggal) {
       const found = filteredDataRekapCache.harian.find(h => h.tanggal === tanggal);
       if (!found) {
@@ -1456,7 +1454,6 @@
       await kirimDataRawKePrinter(textPrint);
     }
 
-    // FUNGSI CETAK THERMAL REKAP BULANAN
     async function cetakThermalRekapBulanan(bulan) {
       const found = filteredDataRekapCache.bulanan.find(b => b.bulan === bulan);
       if (!found) {
@@ -2012,6 +2009,7 @@
       const filterTgl = document.getElementById('filterTanggal').value;
       const filterBln = document.getElementById('filterBulan').value;
 
+      // 1. Filter Rekap Harian
       let harianFiltered = cacheDataRekap.harian.filter(h => {
         if (filterTgl && h.tanggal !== filterTgl) return false;
         if (filterBln && !h.tanggal.startsWith(filterBln)) return false;
@@ -2025,6 +2023,7 @@
         return { ...h, totalOmset, listTransaksi: list };
       }).filter(h => h.listTransaksi.length > 0);
 
+      // 2. Filter Rekap Bulanan
       let bulananFiltered = cacheDataRekap.bulanan.filter(b => {
         if (filterBln && b.bulan !== filterBln) return false;
         return true;
@@ -2038,19 +2037,41 @@
         return { ...b, totalOmset, listTransaksi: list };
       }).filter(b => b.listTransaksi.length > 0);
 
-      let pembeliFiltered = cacheDataRekap.rekapPembeliBulanan.filter(p => {
-        if (filterBln && p.bulan !== filterBln) return false;
-        if (keyword && !p.pembeli.toLowerCase().includes(keyword)) return false;
-        return true;
-      }).map(p => {
-        let list = p.listTransaksi.filter(t => {
-          if (filterTgl && t.tanggal !== filterTgl) return false;
-          return true;
+      // 3. DI PERBAIKI: Rekap Seluruh Pembeli (Menggabungkan dari cache harian agar tidak hanya yang berhutang)
+      let pembeliMap = {};
+      
+      cacheDataRekap.harian.forEach(h => {
+        const bulanTrx = h.tanggal.substring(0, 7); // Format YYYY-MM
+        if (filterBln && bulanTrx !== filterBln) return;
+        if (filterTgl && h.tanggal !== filterTgl) return;
+
+        h.listTransaksi.forEach(t => {
+          if (keyword) {
+            const matchPembeli = t.pembeli.toLowerCase().includes(keyword);
+            const matchItem = t.items.toLowerCase().includes(keyword);
+            if (!matchPembeli && !matchItem) return;
+          }
+
+          const namaPembeli = t.pembeli || "Umum";
+          const keyMap = `${namaPembeli}_${bulanTrx}`;
+
+          if (!pembeliMap[keyMap]) {
+            pembeliMap[keyMap] = {
+              pembeli: namaPembeli,
+              bulan: bulanTrx,
+              listTransaksi: []
+            };
+          }
+          pembeliMap[keyMap].listTransaksi.push(t);
         });
-        let totalBelanja = list.reduce((acc, curr) => acc + curr.total, 0);
-        let totalBayar = list.reduce((acc, curr) => acc + curr.bayar, 0);
-        let totalHutangPiutang = list.reduce((acc, curr) => acc + curr.kembali, 0);
-        return { ...p, totalBelanja, totalBayar, totalHutangPiutang, listTransaksi: list };
+      });
+
+      // Hitung ringkasan total per pembeli
+      let pembeliFiltered = Object.values(pembeliMap).map(p => {
+        let totalBelanja = p.listTransaksi.reduce((acc, curr) => acc + curr.total, 0);
+        let totalBayar = p.listTransaksi.reduce((acc, curr) => acc + curr.bayar, 0);
+        let totalHutangPiutang = p.listTransaksi.reduce((acc, curr) => acc + curr.kembali, 0);
+        return { ...p, totalBelanja, totalBayar, totalHutangPiutang };
       }).filter(p => p.listTransaksi.length > 0);
 
       filteredDataRekapCache = {
@@ -2179,82 +2200,91 @@
       });
     }
 
+    // --- DIPERBAIKI: MENAMPILKAN SELURUH PEMBELI & RIWAYAT TRANSAKSI PER PEMBELI ---
     function renderRekapPembeliView() {
-  const container = document.getElementById('listRekapPembeli');
-  container.innerHTML = '';
+      const container = document.getElementById('listRekapPembeli');
+      container.innerHTML = '';
 
-  if (filteredDataRekapCache.rekapPembeliBulanan.length === 0) {
-    container.innerHTML = `<div class="bg-white p-8 rounded-3xl text-center text-slate-400 font-semibold border border-slate-200">Tidak ada data rekap per pembeli</div>`;
-    return;
-  }
+      if (filteredDataRekapCache.rekapPembeliBulanan.length === 0) {
+        container.innerHTML = `<div class="bg-white p-8 rounded-3xl text-center text-slate-400 font-semibold border border-slate-200">Tidak ada data rekap per pembeli</div>`;
+        return;
+      }
 
-  filteredDataRekapCache.rekapPembeliBulanan.forEach(p => {
-    const card = document.createElement('div');
-    card.className = "bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 space-y-4 hover:shadow-md transition";
+      filteredDataRekapCache.rekapPembeliBulanan.forEach(p => {
+        const card = document.createElement('div');
+        card.className = "bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 space-y-4 hover:shadow-md transition";
 
-    let rowsHtml = '';
-    p.listTransaksi.forEach((t, i) => {
-      rowsHtml += `
-        <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
-          <td class="py-3 px-4 font-mono">${t.tanggal} ${t.waktu || ''}</td>
-          <td class="py-3 px-4 font-semibold text-slate-800">${t.items}</td>
-          <td class="py-3 px-4 text-right font-mono font-bold text-slate-900">Rp ${t.total.toLocaleString('id-ID')}</td>
-          <td class="py-3 px-4 text-right font-mono text-emerald-600">Rp ${t.bayar.toLocaleString('id-ID')}</td>
-          <td class="py-3 px-4 text-right font-mono font-bold ${t.kembali >= 0 ? 'text-slate-700' : 'text-rose-600'}">
-            Rp ${t.kembali >= 0 ? t.kembali.toLocaleString('id-ID') : Math.abs(t.kembali).toLocaleString('id-ID') + ' (Utang)'}
-          </td>
-        </tr>
-      `;
-    });
+        // Membangun baris riwayat transaksi untuk setiap pembeli
+        let transaksiRows = '';
+        if (p.listTransaksi && p.listTransaksi.length > 0) {
+          p.listTransaksi.forEach(t => {
+            transaksiRows += `
+              <tr class="border-b border-slate-100 hover:bg-slate-50 transition text-xs">
+                <td class="py-2.5 px-3 font-mono text-slate-600">${t.tanggal} ${t.waktu ? '(' + t.waktu + ')' : ''}</td>
+                <td class="py-2.5 px-3 font-semibold text-slate-800">${t.items}</td>
+                <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900">Rp ${t.total.toLocaleString('id-ID')}</td>
+                <td class="py-2.5 px-3 text-right font-mono text-emerald-600">Rp ${t.bayar.toLocaleString('id-ID')}</td>
+                <td class="py-2.5 px-3 text-right font-mono ${t.kembali >= 0 ? 'text-slate-700' : 'text-rose-600 font-bold'}">Rp ${t.kembali.toLocaleString('id-ID')}</td>
+              </tr>
+            `;
+          });
+        } else {
+          transaksiRows = `<tr><td colspan="5" class="p-3 text-center text-slate-400 text-xs">Belum ada riwayat transaksi</td></tr>`;
+        }
 
-    card.innerHTML = `
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
-        <div>
-          <h3 class="text-base font-extrabold text-slate-900">👤 Pembeli: ${p.pembeli}</h3>
-          <p class="text-xs text-slate-500">Periode Bulan: <strong class="text-slate-800">${p.bulan}</strong></p>
-        </div>
-        <button onclick="cetakBiasaRekap('pembeli', '${p.pembeli}', '${p.bulan}')" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1.5">
-          <span>🖨️</span> Print Rekap Pembeli
-        </button>
-      </div>
+        card.innerHTML = `
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
+            <div>
+              <h3 class="text-base font-extrabold text-slate-900">👤 Pembeli: ${p.pembeli} <span class="text-xs font-normal text-slate-500">(${p.bulan})</span></h3>
+              <p class="text-xs text-slate-500">Total Belanja: <strong class="text-slate-900 font-black">Rp ${p.totalBelanja.toLocaleString('id-ID')}</strong></p>
+            </div>
+            <button onclick="cetakBiasaRekap('pembeli', '${p.pembeli}', '${p.bulan}')" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1.5">
+              <span>🖨️</span> Print Rekap Pembeli
+            </button>
+          </div>
 
-      <div class="grid grid-cols-3 gap-3 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-100">
-        <div>
-          <p class="text-slate-400 font-bold uppercase text-[10px]">Total Belanja</p>
-          <p class="font-black text-slate-900 mt-0.5">Rp ${p.totalBelanja.toLocaleString('id-ID')}</p>
-        </div>
-        <div>
-          <p class="text-slate-400 font-bold uppercase text-[10px]">Total Dibayar</p>
-          <p class="font-black text-emerald-600 mt-0.5">Rp ${p.totalBayar.toLocaleString('id-ID')}</p>
-        </div>
-        <div>
-          <p class="text-slate-400 font-bold uppercase text-[10px]">Sisa / Status</p>
-          <p class="font-black ${p.totalHutangPiutang >= 0 ? 'text-slate-900' : 'text-rose-600'} mt-0.5">
-            Rp ${Math.abs(p.totalHutangPiutang).toLocaleString('id-ID')} ${p.totalHutangPiutang < 0 ? '(Utang)' : ''}
-          </p>
-        </div>
-      </div>
+          <div class="grid grid-cols-3 gap-3 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <div>
+              <p class="text-slate-400 font-bold uppercase text-[10px]">Total Belanja</p>
+              <p class="font-black text-slate-900 mt-0.5">Rp ${p.totalBelanja.toLocaleString('id-ID')}</p>
+            </div>
+            <div>
+              <p class="text-slate-400 font-bold uppercase text-[10px]">Total Dibayar</p>
+              <p class="font-black text-emerald-600 mt-0.5">Rp ${p.totalBayar.toLocaleString('id-ID')}</p>
+            </div>
+            <div>
+              <p class="text-slate-400 font-bold uppercase text-[10px]">Kembalian / Sisa Hutang</p>
+              <p class="font-black ${p.totalHutangPiutang >= 0 ? 'text-slate-900' : 'text-rose-600'} mt-0.5">
+                Rp ${p.totalHutangPiutang.toLocaleString('id-ID')}
+              </p>
+            </div>
+          </div>
 
-      <div class="overflow-x-auto border border-slate-100 rounded-2xl mt-3">
-        <table class="w-full text-left text-xs border-collapse">
-          <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
-            <tr>
-              <th class="p-3 pl-4">Tanggal & Waktu</th>
-              <th class="p-3">Rincian Item</th>
-              <th class="p-3 text-right">Total</th>
-              <th class="p-3 text-right">Bayar</th>
-              <th class="p-3 pr-4 text-right">Kembali / Utang</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            ${rowsHtml}
-          </tbody>
-        </table>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-}
+          <!-- Tabel Riwayat Transaksi per Pembeli -->
+          <div class="mt-3 pt-3 border-t border-slate-100">
+            <p class="text-xs font-bold text-slate-700 mb-2">📜 Riwayat Transaksi:</p>
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-100/70 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                    <th class="py-2 px-3">Tanggal / Waktu</th>
+                    <th class="py-2 px-3">Rincian Item</th>
+                    <th class="py-2 px-3 text-right">Total</th>
+                    <th class="py-2 px-3 text-right">Bayar</th>
+                    <th class="py-2 px-3 text-right">Kembali / Kurang</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  ${transaksiRows}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
     function cetakBiasaRekap(tipe, param1, param2) {
       const areaTtd = document.getElementById('printAreaTtdImg');
       areaTtd.innerHTML = '';
