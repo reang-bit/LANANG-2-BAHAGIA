@@ -1377,11 +1377,11 @@
       textPrint += `Pembeli: ${pembeli}\n`;
       textPrint += "--------------------------------\n";
 
-      // Memecah item terperinci berdasarkan string item atau format array
-      if (typeof itemsStr === 'string' && itemsStr.includes(',')) {
-        const itemArray = itemsStr.split(',');
-        itemArray.forEach(it => {
-          textPrint += `${it.trim()}\n`;
+      // Parsing string items kembali ke format per item jika memungkinkan, atau cetak perinciannya
+      if (typeof itemsStr === 'string' && itemsStr.includes('x)')) {
+        const itemParts = itemsStr.split(',');
+        itemParts.forEach(part => {
+          textPrint += `${part.trim()}\n`;
         });
       } else {
         textPrint += `${itemsStr}\n`;
@@ -1420,6 +1420,7 @@
 
       await kirimDataRawKePrinter(textPrint);
     }
+
     // FUNGSI CETAK THERMAL REKAP HARIAN
     async function cetakThermalRekapHarian(tanggal) {
       const found = filteredDataRekapCache.harian.find(h => h.tanggal === tanggal);
