@@ -2180,50 +2180,81 @@
     }
 
     function renderRekapPembeliView() {
-      const container = document.getElementById('listRekapPembeli');
-      container.innerHTML = '';
+  const container = document.getElementById('listRekapPembeli');
+  container.innerHTML = '';
 
-      if (filteredDataRekapCache.rekapPembeliBulanan.length === 0) {
-        container.innerHTML = `<div class="bg-white p-8 rounded-3xl text-center text-slate-400 font-semibold border border-slate-200">Tidak ada data rekap per pembeli</div>`;
-        return;
-      }
+  if (filteredDataRekapCache.rekapPembeliBulanan.length === 0) {
+    container.innerHTML = `<div class="bg-white p-8 rounded-3xl text-center text-slate-400 font-semibold border border-slate-200">Tidak ada data rekap per pembeli</div>`;
+    return;
+  }
 
-      filteredDataRekapCache.rekapPembeliBulanan.forEach(p => {
-        const card = document.createElement('div');
-        card.className = "bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 space-y-4 hover:shadow-md transition";
+  filteredDataRekapCache.rekapPembeliBulanan.forEach(p => {
+    const card = document.createElement('div');
+    card.className = "bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 space-y-4 hover:shadow-md transition";
 
-        card.innerHTML = `
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
-            <div>
-              <h3 class="text-base font-extrabold text-slate-900">👤 Pembeli: ${p.pembeli} (${p.bulan})</h3>
-              <p class="text-xs text-slate-500">Total Belanja: <strong class="text-slate-900 font-black">Rp ${p.totalBelanja.toLocaleString('id-ID')}</strong></p>
-            </div>
-            <button onclick="cetakBiasaRekap('pembeli', '${p.pembeli}', '${p.bulan}')" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1.5">
-              <span>🖨️</span> Print Rekap Pembeli
-            </button>
-          </div>
+    let rowsHtml = '';
+    p.listTransaksi.forEach((t, i) => {
+      rowsHtml += `
+        <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
+          <td class="py-3 px-4 font-mono">${t.tanggal} ${t.waktu || ''}</td>
+          <td class="py-3 px-4 font-semibold text-slate-800">${t.items}</td>
+          <td class="py-3 px-4 text-right font-mono font-bold text-slate-900">Rp ${t.total.toLocaleString('id-ID')}</td>
+          <td class="py-3 px-4 text-right font-mono text-emerald-600">Rp ${t.bayar.toLocaleString('id-ID')}</td>
+          <td class="py-3 px-4 text-right font-mono font-bold ${t.kembali >= 0 ? 'text-slate-700' : 'text-rose-600'}">
+            Rp ${t.kembali >= 0 ? t.kembali.toLocaleString('id-ID') : Math.abs(t.kembali).toLocaleString('id-ID') + ' (Utang)'}
+          </td>
+        </tr>
+      `;
+    });
 
-          <div class="grid grid-cols-3 gap-3 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-100">
-            <div>
-              <p class="text-slate-400 font-bold uppercase text-[10px]">Total Belanja</p>
-              <p class="font-black text-slate-900 mt-0.5">Rp ${p.totalBelanja.toLocaleString('id-ID')}</p>
-            </div>
-            <div>
-              <p class="text-slate-400 font-bold uppercase text-[10px]">Total Dibayar</p>
-              <p class="font-black text-emerald-600 mt-0.5">Rp ${p.totalBayar.toLocaleString('id-ID')}</p>
-            </div>
-            <div>
-              <p class="text-slate-400 font-bold uppercase text-[10px]">Kembalian / Sisa Hutang</p>
-              <p class="font-black ${p.totalHutangPiutang >= 0 ? 'text-slate-900' : 'text-rose-600'} mt-0.5">
-                Rp ${p.totalHutangPiutang.toLocaleString('id-ID')}
-              </p>
-            </div>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
+    card.innerHTML = `
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
+        <div>
+          <h3 class="text-base font-extrabold text-slate-900">👤 Pembeli: ${p.pembeli}</h3>
+          <p class="text-xs text-slate-500">Periode Bulan: <strong class="text-slate-800">${p.bulan}</strong></p>
+        </div>
+        <button onclick="cetakBiasaRekap('pembeli', '${p.pembeli}', '${p.bulan}')" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1.5">
+          <span>🖨️</span> Print Rekap Pembeli
+        </button>
+      </div>
 
+      <div class="grid grid-cols-3 gap-3 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-100">
+        <div>
+          <p class="text-slate-400 font-bold uppercase text-[10px]">Total Belanja</p>
+          <p class="font-black text-slate-900 mt-0.5">Rp ${p.totalBelanja.toLocaleString('id-ID')}</p>
+        </div>
+        <div>
+          <p class="text-slate-400 font-bold uppercase text-[10px]">Total Dibayar</p>
+          <p class="font-black text-emerald-600 mt-0.5">Rp ${p.totalBayar.toLocaleString('id-ID')}</p>
+        </div>
+        <div>
+          <p class="text-slate-400 font-bold uppercase text-[10px]">Sisa / Status</p>
+          <p class="font-black ${p.totalHutangPiutang >= 0 ? 'text-slate-900' : 'text-rose-600'} mt-0.5">
+            Rp ${Math.abs(p.totalHutangPiutang).toLocaleString('id-ID')} ${p.totalHutangPiutang < 0 ? '(Utang)' : ''}
+          </p>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto border border-slate-100 rounded-2xl mt-3">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+            <tr>
+              <th class="p-3 pl-4">Tanggal & Waktu</th>
+              <th class="p-3">Rincian Item</th>
+              <th class="p-3 text-right">Total</th>
+              <th class="p-3 text-right">Bayar</th>
+              <th class="p-3 pr-4 text-right">Kembali / Utang</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            ${rowsHtml}
+          </tbody>
+        </table>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
     function cetakBiasaRekap(tipe, param1, param2) {
       const areaTtd = document.getElementById('printAreaTtdImg');
       areaTtd.innerHTML = '';
