@@ -1476,7 +1476,20 @@
       textPrint += `Total Bayar  : Rp ${totalBayarSemua.toLocaleString('id-ID')}\n`;
       textPrint += `Total Hutang : Rp ${totalHutangSemua.toLocaleString('id-ID')}\n`;
       textPrint += "--------------------------------\n";
-      textPrint += CENTER + "**Terimakasih**\n\n" + CUT;
+      textPrint += CENTER + "**Terimakasih**\n";
+      textPrint += CENTER + "Kunjungi Situs Kami\n";
+      textPrint += CENTER + "Scan QR Kode Dibawah ini\n\n";
+      const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
+      const storeLength = qrUrl.length + 3;
+      const pL = String.fromCharCode(storeLength % 256);
+      const pH = String.fromCharCode(Math.floor(storeLength / 256));
+
+      textPrint += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+      textPrint += GS + '(k' + '\x03\x00\x31\x43\x05';
+      textPrint += GS + '(k' + '\x03\x00\x31\x45\x30';
+      textPrint += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+      textPrint += GS + '(k' + '\x03\x00\x31\x51\x30';
+      textPrint += "\n" + CUT;
 
       await kirimDataRawKePrinter(textPrint);
     }
@@ -1534,10 +1547,24 @@
       textPrint += `Total Bayar  : Rp ${totalBayarBulanan.toLocaleString('id-ID')}\n`;
       textPrint += `Total Hutang : Rp ${totalHutangBulanan.toLocaleString('id-ID')}\n`;
       textPrint += "--------------------------------\n";
-      textPrint += CENTER + "**Terimakasih**\n\n" + CUT;
+      textPrint += CENTER + "**Terimakasih**\n";
+            textPrint += CENTER + "Kunjungi Situs Kami\n";
+      textPrint += CENTER + "Scan QR Kode Dibawah ini\n\n";
+      const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
+      const storeLength = qrUrl.length + 3;
+      const pL = String.fromCharCode(storeLength % 256);
+      const pH = String.fromCharCode(Math.floor(storeLength / 256));
+
+      textPrint += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+      textPrint += GS + '(k' + '\x03\x00\x31\x43\x05';
+      textPrint += GS + '(k' + '\x03\x00\x31\x45\x30';
+      textPrint += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+      textPrint += GS + '(k' + '\x03\x00\x31\x51\x30';
+      textPrint += "\n" + CUT;
 
       await kirimDataRawKePrinter(textPrint);
     }
+
 
     async function cetakThermalRekapPembeli(pembeliNama) {
       const found = filteredDataRekapCache.rekapPembeliBulanan.find(p => p.pembeli === pembeliNama);
@@ -1589,7 +1616,20 @@
       textPrint += `Total Bayar  : Rp ${totalBayarPembeli.toLocaleString('id-ID')}\n`;
       textPrint += `Total Hutang : Rp ${totalHutangPembeli.toLocaleString('id-ID')}\n`;
       textPrint += "--------------------------------\n";
-      textPrint += CENTER + "**Terimakasih**\n\n" + CUT;
+      textPrint += CENTER + "**Terimakasih**\n";
+      textPrint += CENTER + "Kunjungi Situs Kami\n";
+      textPrint += CENTER + "Scan QR Kode Dibawah ini\n\n";
+      const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
+      const storeLength = qrUrl.length + 3;
+      const pL = String.fromCharCode(storeLength % 256);
+      const pH = String.fromCharCode(Math.floor(storeLength / 256));
+
+      textPrint += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+      textPrint += GS + '(k' + '\x03\x00\x31\x43\x05';
+      textPrint += GS + '(k' + '\x03\x00\x31\x45\x30';
+      textPrint += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+      textPrint += GS + '(k' + '\x03\x00\x31\x51\x30';
+      textPrint += "\n" + CUT;
 
       await kirimDataRawKePrinter(textPrint);
     }
