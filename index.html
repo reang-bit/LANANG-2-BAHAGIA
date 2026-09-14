@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LANANG 2 BAHAGIA - POS & Management System</title>
+  <title>LANANG 2 BAHAGIA - Solusi Kebutuhan Anda</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -433,9 +433,14 @@
           <h2 class="text-lg font-extrabold text-slate-900">📌 Rekap & Monitoring Hutang Pelanggan</h2>
           <p class="text-xs text-slate-500">Daftar lengkap piutang/hutang pelanggan yang belum lunas.</p>
         </div>
-        <button onclick="muatDataHutang()" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-2xl transition flex items-center gap-2 shadow-md shadow-rose-600/20">
-          <span>🔄</span> Refresh Data Hutang
-        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="konekPrinterBluetooth()" class="px-4 py-2.5 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 font-bold text-xs rounded-2xl transition flex items-center gap-2 shadow-sm">
+            <span>🦷</span> Connect Printer
+          </button>
+          <button onclick="muatDataHutang()" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-2xl transition flex items-center gap-2 shadow-md shadow-rose-600/20">
+            <span>🔄</span> Refresh Data Hutang
+          </button>
+        </div>
       </div>
 
       <!-- KARTU RINGKASAN TOTAL HUTANG -->
@@ -1249,7 +1254,7 @@
 
     async function kirimDataRawKePrinter(data) {
       if (!bluetoothCharacteristic) {
-        alert("Printer Thermal belum terhubung via Bluetooth!");
+        alert("Printer Thermal belum terhubung via Bluetooth!\nKlik tombol 'Connect Printer' terlebih dahulu.");
         return;
       }
       const encoder = new TextEncoder();
@@ -1368,6 +1373,48 @@
 
       textPrint += "--------------------------------\n";
       textPrint += CENTER + "Kunjungi Situs Kami\n";
+      textPrint += CENTER + "Scann QR Kode Dibawah ini\n\n";
+      const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
+      const storeLength = qrUrl.length + 3;
+      const pL = String.fromCharCode(storeLength % 256);
+      const pH = String.fromCharCode(Math.floor(storeLength / 256));
+
+      textPrint += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+      textPrint += GS + '(k' + '\x03\x00\x31\x43\x05';
+      textPrint += GS + '(k' + '\x03\x00\x31\x45\x30';
+      textPrint += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+      textPrint += GS + '(k' + '\x03\x00\x31\x51\x30';
+      textPrint += "\n" + CUT;
+
+      await kirimDataRawKePrinter(textPrint);
+    }
+
+    async function cetakThermalDaftarHutang(pembeli, totalHutang, listTransaksiStr) {
+      const now = new Date();
+      const tglStr = now.toLocaleDateString('id-ID') + " " + now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+
+      let textPrint = "";
+      textPrint += "\x1B\x40"; // Init printer
+      textPrint += CENTER;
+      textPrint += "LANANG 2 BAHAGIA\n";
+      textPrint += "SURAT RINCIAN / TAGIHAN UTANG\n";
+      textPrint += "--------------------------------\n";
+      textPrint += LEFT;
+      textPrint += `Cetak : ${tglStr}\n`;
+      textPrint += `Nama  : ${pembeli}\n`;
+      textPrint += "--------------------------------\n";
+      textPrint += "DAFTAR TRANSAKSI BELUM LUNAS:\n";
+
+      listTransaksiStr.forEach(t => {
+        textPrint += `- ${t.tanggal} (${t.waktu})\n`;
+        textPrint += `  ${t.items}\n`;
+        textPrint += `  Sisa: Rp ${Math.abs(t.kembali).toLocaleString('id-ID')}\n`;
+      });
+
+      textPrint += "--------------------------------\n";
+      textPrint += `TOTAL UTANG : Rp ${totalHutang.toLocaleString('id-ID')}\n`;
+      textPrint += "--------------------------------\n";
+      textPrint += CENTER + "Terima Kasih Atas Kerjasamanya\n";
       textPrint += CENTER + "Scann QR Kode Dibawah ini\n\n";
       const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
       const storeLength = qrUrl.length + 3;
@@ -1600,15 +1647,23 @@
               `;
             });
 
+            // ESC/POS JSON encoder stringify safe for inline parameter
+            const encodedListTrx = encodeURIComponent(JSON.stringify(data.listTransaksi));
+
             card.innerHTML = `
               <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
                 <div>
                   <h3 class="text-base font-extrabold text-slate-900">${data.pembeli}</h3>
                   <p class="text-xs text-slate-500">Sisa Hutang: <span class="font-extrabold text-rose-600">Rp ${data.totalHutang.toLocaleString('id-ID')}</span></p>
                 </div>
-                <button onclick="bukaModalBayarUtang('${data.pembeli}', ${data.totalHutang})" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-md transition">
-                  💳 Bayar / Cicil Utang
-                </button>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <button onclick="cetakThermalDaftarHutang('${data.pembeli}', ${data.totalHutang}, JSON.decode || JSON.parse(decodeURIComponent('${encodedListTrx}')))" class="px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-1.5">
+                    <span>🦷</span> Cetak Thermal
+                  </button>
+                  <button onclick="bukaModalBayarUtang('${data.pembeli}', ${data.totalHutang})" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-md transition">
+                    💳 Bayar / Cicil
+                  </button>
+                </div>
               </div>
 
               <div class="overflow-x-auto border border-slate-100 rounded-2xl">
@@ -1658,8 +1713,8 @@
       document.getElementById('textUtangBaru').innerText = "Rp " + sisaBaru.toLocaleString('id-ID');
     }
 
-    function prosesPembayaranUtang(e) {
-      e.preventDefault();
+    function prosesPembayaranUtang(event) {
+      event.preventDefault();
       const pembeli = document.getElementById('utangNamaPembeli').value;
       const bayar = Number(document.getElementById('inputBayarUtang').value) || 0;
 
