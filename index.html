@@ -1226,32 +1226,49 @@
         });
     }
 
-    function konekPrinterBluetooth() {
-      if (!navigator.bluetooth) {
-        alert("Browser Anda tidak mendukung Web Bluetooth API.");
-        return;
-      }
+   async function konekPrinterBluetooth() {
+  if (!navigator.bluetooth) {
+    alert("Browser Anda tidak mendukung Web Bluetooth API. Gunakan Google Chrome di Android/PC.");
+    return;
+  }
 
-      navigator.bluetooth.requestDevice({
-        acceptAllDevices: true,
-        optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb', '49535343-fe7d-4ae5-8fa9-9fafd205e455']
-      })
-      .then(device => device.gatt.connect())
-      .then(server => server.getPrimaryServices())
-      .then(services => {
-        let service = services[0];
-        return service.getCharacteristics();
-      })
-      .then(characteristics => {
-        bluetoothCharacteristic = characteristics[0];
-        alert("Printer Thermal Berhasil Terhubung via Bluetooth!");
-      })
-      .catch(err => {
-        console.error(err);
-        alert("Gagal konek Bluetooth: " + err);
-      });
+  try {
+    const device = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: [
+        '000018f0-0000-1000-8000-00805f9b34fb', 
+        '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+        '0000ff00-0000-1000-8000-00805f9b34fb',
+        'e7810a71-73ae-499d-8c15-faa9aef0c3f2'
+      ]
+    });
+
+    const server = await device.gatt.connect();
+    const services = await server.getPrimaryServices();
+    
+    let targetCharacteristic = null;
+    for (const service of services) {
+      const characteristics = await service.getCharacteristics();
+      for (const char of characteristics) {
+        if (char.properties.write || char.properties.writeWithoutResponse) {
+          targetCharacteristic = char;
+          break;
+        }
+      }
+      if (targetCharacteristic) break;
     }
 
+    if (!targetCharacteristic) {
+      throw new Error("Karakteristik tulis (write) tidak ditemukan pada printer ini.");
+    }
+
+    bluetoothCharacteristic = targetCharacteristic;
+    alert("Printer Thermal Berhasil Terhubung dan Siap Digunakan!");
+  } catch (err) {
+    console.error(err);
+    alert("Gagal konek Bluetooth: " + (err.message || err));
+  }
+}
     async function kirimDataRawKePrinter(data) {
       if (!bluetoothCharacteristic) {
         alert("Printer Thermal belum terhubung via Bluetooth!\nKlik tombol 'Connect Printer' terlebih dahulu.");
