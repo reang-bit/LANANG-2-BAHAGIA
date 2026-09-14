@@ -582,9 +582,14 @@
           <h2 class="text-lg font-extrabold text-slate-900">📊 Rekapitulasi Laporan Transaksi</h2>
           <p class="text-xs text-slate-500">Laporan omset harian, bulanan, dan rekap per pelanggan.</p>
         </div>
-        <button onclick="muatDataRekap()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-2xl transition flex items-center gap-2 shadow-md shadow-emerald-600/20">
-          <span>🔄</span> Refresh Rekap
-        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="konekPrinterBluetooth()" class="px-4 py-2.5 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 font-bold text-xs rounded-2xl transition flex items-center gap-2 shadow-sm">
+            <span>🦷</span> Connect Printer
+          </button>
+          <button onclick="muatDataRekap()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-2xl transition flex items-center gap-2 shadow-md shadow-emerald-600/20">
+            <span>🔄</span> Refresh Rekap
+          </button>
+        </div>
       </div>
 
       <!-- PENGATURAN TANDA TANGAN & NAMA PIMPINAN / KASIR -->
@@ -1226,88 +1231,83 @@
         });
     }
 
-   async function konekPrinterBluetooth() {
-  if (!navigator.bluetooth) {
-    alert("Browser Anda tidak mendukung Web Bluetooth API. Gunakan Google Chrome di Android/PC.");
-    return;
-  }
+    async function konekPrinterBluetooth() {
+      if (!navigator.bluetooth) {
+        alert("Browser Anda tidak mendukung Web Bluetooth API. Gunakan Google Chrome di Android/PC.");
+        return;
+      }
 
-  try {
-    const device = await navigator.bluetooth.requestDevice({
-      acceptAllDevices: true,
-      optionalServices: [
-        '000018f0-0000-1000-8000-00805f9b34fb', 
-        '49535343-fe7d-4ae5-8fa9-9fafd205e455',
-        '0000ff00-0000-1000-8000-00805f9b34fb',
-        'e7810a71-73ae-499d-8c15-faa9aef0c3f2'
-      ]
-    });
+      try {
+        const device = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: [
+            '000018f0-0000-1000-8000-00805f9b34fb', 
+            '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+            '0000ff00-0000-1000-8000-00805f9b34fb',
+            'e7810a71-73ae-499d-8c15-faa9aef0c3f2'
+          ]
+        });
 
-    const server = await device.gatt.connect();
-    const services = await server.getPrimaryServices();
-    
-    let targetCharacteristic = null;
-    for (const service of services) {
-      const characteristics = await service.getCharacteristics();
-      for (const char of characteristics) {
-        if (char.properties.write || char.properties.writeWithoutResponse) {
-          targetCharacteristic = char;
-          break;
+        const server = await device.gatt.connect();
+        const services = await server.getPrimaryServices();
+        
+        let targetCharacteristic = null;
+        for (const service of services) {
+          const characteristics = await service.getCharacteristics();
+          for (const char of characteristics) {
+            if (char.properties.write || char.properties.writeWithoutResponse) {
+              targetCharacteristic = char;
+              break;
+            }
+          }
+          if (targetCharacteristic) break;
         }
+
+        if (!targetCharacteristic) {
+          throw new Error("Karakteristik tulis (write) tidak ditemukan pada printer ini.");
+        }
+
+        bluetoothCharacteristic = targetCharacteristic;
+        alert("Printer Thermal Berhasil Terhubung dan Siap Digunakan!");
+      } catch (err) {
+        console.error(err);
+        alert("Gagal konek Bluetooth: " + (err.message || err));
       }
-      if (targetCharacteristic) break;
     }
 
-    if (!targetCharacteristic) {
-      throw new Error("Karakteristik tulis (write) tidak ditemukan pada printer ini.");
-    }
-
-    bluetoothCharacteristic = targetCharacteristic;
-    alert("Printer Thermal Berhasil Terhubung dan Siap Digunakan!");
-  } catch (err) {
-    console.error(err);
-    alert("Gagal konek Bluetooth: " + (err.message || err));
-  }
-}
-   async function kirimDataRawKePrinter(data) {
-  if (!bluetoothCharacteristic) {
-    alert("Printer Thermal belum terhubung via Bluetooth!\nKlik tombol 'Connect Printer' terlebih dahulu.");
-    return;
-  }
-
-  const encoder = new TextEncoder();
-  const bytes = encoder.encode(data);
-  
-  // Batasan aman ukuran chunk untuk BLE (biasanya 512 byte atau 100-120 byte untuk kestabilan)
-  const CHUNK_SIZE = 100; 
-
-  try {
-    for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
-      const chunk = bytes.slice(i, i + CHUNK_SIZE);
-      
-      // Gunakan writeValue jika didukung, atau writeValueWithoutResponse jika printer mendukungnya
-      if (bluetoothCharacteristic.properties.writeWithoutResponse) {
-        await bluetoothCharacteristic.writeValueWithoutResponse(chunk);
-      } else {
-        await bluetoothCharacteristic.writeValue(chunk);
+    async function kirimDataRawKePrinter(data) {
+      if (!bluetoothCharacteristic) {
+        alert("Printer Thermal belum terhubung via Bluetooth!\nKlik tombol 'Connect Printer' terlebih dahulu.");
+        return;
       }
-      
-      // Jeda kecil antar chunk agar buffer printer tidak kewalahan
-      await new Promise(resolve => setTimeout(resolve, 30));
+
+      const encoder = new TextEncoder();
+      const bytes = encoder.encode(data);
+      const CHUNK_SIZE = 100; 
+
+      try {
+        for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+          const chunk = bytes.slice(i, i + CHUNK_SIZE);
+          if (bluetoothCharacteristic.properties.writeWithoutResponse) {
+            await bluetoothCharacteristic.writeValueWithoutResponse(chunk);
+          } else {
+            await bluetoothCharacteristic.writeValue(chunk);
+          }
+          await new Promise(resolve => setTimeout(resolve, 30));
+        }
+        console.log("Semua data berhasil dikirim ke printer thermal.");
+      } catch (e) {
+        console.error("Gagal kirim data ke printer:", e);
+        alert("Gagal mengirim data ke printer: " + (e.message || e));
+      }
     }
-    console.log("Semua data berhasil dikirim ke printer thermal.");
-  } catch (e) {
-    console.error("Gagal kirim data ke printer:", e);
-    alert("Gagal mengirim data ke printer: " + (e.message || e));
-  }
-}
 
     async function cetakStrukThermal(pembeli, pelayan, items, total, bayar, kembali, kosongan) {
       const now = new Date();
       const tglStr = now.toLocaleDateString('id-ID') + " " + now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
 
       let textPrint = "";
-      textPrint += "\x1B\x40"; // Init printer
+      textPrint += "\x1B\x40"; 
       textPrint += CENTER;
       textPrint += "LANANG 2 BAHAGIA\n";
       textPrint += "Jl. Raya Jagapura Lor - Nyibanda\n";
@@ -1359,78 +1359,127 @@
       await kirimDataRawKePrinter(textPrint);
     }
 
-    async function cetakStrukThermalDetail(pembeli, items, total, bayar, kembali, pelayan , kosongan = "") {
-  // Definisi perintah ESC/POS jika belum ada di file utama
-  const ESC = "\x1B";
-  const GS = "\x1D";
-  const CENTER = ESC + "\x61\x31";
-  const LEFT = ESC + "\x61\x30";
-  const CUT = "\x1D\x56\x42\x00"; // Perintah potong kertas
+    async function cetakStrukThermalDetail(pembeli, items, total, bayar, kembali, pelayan = "-", kosongan = "") {
+      const now = new Date();
+      const tglStr = now.toLocaleDateString('id-ID') + " " + now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
 
-  const now = new Date();
-  const tglStr = now.toLocaleDateString('id-ID') + " " + now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+      let textPrint = "";
+      textPrint += "\x1B\x40"; 
+      textPrint += CENTER;
+      textPrint += "LANANG 2 BAHAGIA\n";
+      textPrint += "Jl. Raya Jagapura Lor - Nyibanda\n";
+      textPrint += "Solusi Kebutuhan Anda\n";
+      textPrint += "--------------------------------\n";
+      textPrint += "RINCIAN BELANJA\n";
+      textPrint += LEFT;
+      textPrint += `Tgl   : ${tglStr}\n`;
+      textPrint += `Kasir : ${pelayan}\n`;
+      textPrint += `Pembeli: ${pembeli}\n`;
+      textPrint += "--------------------------------\n";
+      textPrint += `${items}\n`;
 
-  let textPrint = "";
-  textPrint += "\x1B\x40"; // Init printer
-  textPrint += CENTER;
-  textPrint += "LANANG 2 BAHAGIA\n";
-  textPrint += "Jl. Raya Jagapura Lor - Nyibanda\n";
-  textPrint += "Solusi Kebutuhan Anda\n";
-  textPrint += "--------------------------------\n";
-  textPrint += "RINCIAN BELANJA\n";
-  textPrint += LEFT;
-  textPrint += `Tgl   : ${tglStr}\n`;
-  textPrint += `Kasir : ${pelayan}\n`;
-  textPrint += `Pembeli: ${pembeli}\n`;
-  textPrint += "--------------------------------\n";
+      if (kosongan) {
+        textPrint += `Catatan: ${kosongan}\n`;
+      }
 
-  if (Array.isArray(items)) {
-    items.forEach(it => {
-      textPrint += `${it.nama}\n`;
-      const sub = (it.harga || 0) * (it.qty || 0);
-      textPrint += `  ${it.qty} x ${(it.harga || 0).toLocaleString('id-ID')} = ${sub.toLocaleString('id-ID')}\n`;
-    });
-  }
+      textPrint += "--------------------------------\n";
+      textPrint += `Total   : Rp ${(total || 0).toLocaleString('id-ID')}\n`;
+      textPrint += `Bayar   : Rp ${(bayar || 0).toLocaleString('id-ID')}\n`;
 
-  if (kosongan) {
-    textPrint += `Catatan: ${kosongan}\n`;
-  }
+      if (kembali >= 0) {
+        textPrint += `Kembali : Rp ${(kembali || 0).toLocaleString('id-ID')}\n`;
+      } else {
+        textPrint += `HUTANG  : Rp ${Math.abs(kembali || 0).toLocaleString('id-ID')}\n`;
+      }
 
-  textPrint += "--------------------------------\n";
-  textPrint += `Total   : Rp ${(total || 0).toLocaleString('id-ID')}\n`;
-  textPrint += `Bayar   : Rp ${(bayar || 0).toLocaleString('id-ID')}\n`;
+      textPrint += "--------------------------------\n";
+      textPrint += CENTER + "**Terimakasih**\n";
+      textPrint += CENTER + "Scan QR Kode Dibawah ini\n\n";
 
-  if (kembali >= 0) {
-    textPrint += `Kembali : Rp ${(kembali || 0).toLocaleString('id-ID')}\n`;
-  } else {
-    textPrint += `HUTANG  : Rp ${Math.abs(kembali || 0).toLocaleString('id-ID')}\n`;
-  }
+      const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
+      const storeLength = qrUrl.length + 3;
+      const pL = String.fromCharCode(storeLength % 256);
+      const pH = String.fromCharCode(Math.floor(storeLength / 256));
 
-  textPrint += "--------------------------------\n";
-  textPrint += CENTER + "**Terimakasih**\n";
-  textPrint += CENTER + "Kunjungi Situs Kami\n";
-  textPrint += CENTER + "Scan QR Kode Dibawah ini\n\n";
+      textPrint += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
+      textPrint += GS + '(k' + '\x03\x00\x31\x43\x05';
+      textPrint += GS + '(k' + '\x03\x00\x31\x45\x30';
+      textPrint += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
+      textPrint += GS + '(k' + '\x03\x00\x31\x51\x30';
+      textPrint += "\n" + CUT;
 
-  // Bagian cetak QR Code ESC/POS
-  const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
-  const storeLength = qrUrl.length + 3;
-  const pL = String.fromCharCode(storeLength % 256);
-  const pH = String.fromCharCode(Math.floor(storeLength / 256));
+      await kirimDataRawKePrinter(textPrint);
+    }
 
-  textPrint += GS + '(k' + '\x04\x00\x31\x41\x32\x00';
-  textPrint += GS + '(k' + '\x03\x00\x31\x43\x05';
-  textPrint += GS + '(k' + '\x03\x00\x31\x45\x30';
-  textPrint += GS + '(k' + pL + pH + '\x31\x50\x30' + qrUrl;
-  textPrint += GS + '(k' + '\x03\x00\x31\x51\x30';
-  textPrint += "\n" + CUT;
+    // FUNGSI CETAK THERMAL REKAP HARIAN
+    async function cetakThermalRekapHarian(tanggal) {
+      const found = filteredDataRekapCache.harian.find(h => h.tanggal === tanggal);
+      if (!found) {
+        alert("Data rekap harian tidak ditemukan!");
+        return;
+      }
 
-  // Pastikan fungsi kirimDataRawKePrinter tersedia
-  if (typeof kirimDataRawKePrinter === 'function') {
-    await kirimDataRawKePrinter(textPrint);
-  } else {
-    console.error("Fungsi kirimDataRawKePrinter belum didefinisikan.");
-  }
-}
+      let textPrint = "";
+      textPrint += "\x1B\x40";
+      textPrint += CENTER;
+      textPrint += "LANANG 2 BAHAGIA\n";
+      textPrint += "REKAPITULASI HARIAN\n";
+      textPrint += `Tgl: ${found.tanggal}\n`;
+      textPrint += "--------------------------------\n";
+      textPrint += LEFT;
+
+      let totalOmset = 0;
+      found.listTransaksi.forEach((tx, index) => {
+        totalOmset += tx.total;
+        textPrint += `${index + 1}. ${tx.waktu || ''} - ${tx.pembeli || 'Umum'}\n`;
+        textPrint += `   Item: ${tx.items}\n`;
+        textPrint += `   Total: Rp ${(tx.total || 0).toLocaleString('id-ID')}\n`;
+      });
+
+      textPrint += "--------------------------------\n";
+      textPrint += CENTER;
+      textPrint += `TOTAL OMSET HARIAN:\n`;
+      textPrint += `Rp ${totalOmset.toLocaleString('id-ID')}\n`;
+      textPrint += "--------------------------------\n";
+      textPrint += CENTER + "**Terimakasih**\n\n" + CUT;
+
+      await kirimDataRawKePrinter(textPrint);
+    }
+
+    // FUNGSI CETAK THERMAL REKAP BULANAN
+    async function cetakThermalRekapBulanan(bulan) {
+      const found = filteredDataRekapCache.bulanan.find(b => b.bulan === bulan);
+      if (!found) {
+        alert("Data rekap bulanan tidak ditemukan!");
+        return;
+      }
+
+      let textPrint = "";
+      textPrint += "\x1B\x40";
+      textPrint += CENTER;
+      textPrint += "LANANG 2 BAHAGIA\n";
+      textPrint += "REKAPITULASI BULANAN\n";
+      textPrint += `Bulan: ${found.bulan}\n`;
+      textPrint += "--------------------------------\n";
+      textPrint += LEFT;
+
+      let totalOmsetBulanan = 0;
+      found.listTransaksi.forEach((tx, index) => {
+        totalOmsetBulanan += tx.total;
+        textPrint += `${index + 1}. ${tx.tanggal} | ${tx.pembeli}\n`;
+        textPrint += `   Rp ${(tx.total || 0).toLocaleString('id-ID')}\n`;
+      });
+
+      textPrint += "--------------------------------\n";
+      textPrint += CENTER;
+      textPrint += `TOTAL OMSET BULANAN:\n`;
+      textPrint += `Rp ${totalOmsetBulanan.toLocaleString('id-ID')}\n`;
+      textPrint += "--------------------------------\n";
+      textPrint += CENTER + "**Terimakasih**\n\n" + CUT;
+
+      await kirimDataRawKePrinter(textPrint);
+    }
+
     async function cetakThermalDetailKosongan() {
       if (!selectedPelangganKosonganData) return;
       const data = selectedPelangganKosonganData;
@@ -1454,8 +1503,7 @@
 
       textPrint += "--------------------------------\n";
       textPrint += CENTER + "**Terima Kasih**\n";
-      textPrint += CENTER + "Kunjungi Situs Kami\n";
-      textPrint += CENTER + "Scann QR Kode Dibawah ini\n\n";
+      textPrint += CENTER + "Scan QR Kode Dibawah ini\n\n";
       const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
       const storeLength = qrUrl.length + 3;
       const pL = String.fromCharCode(storeLength % 256);
@@ -1476,7 +1524,7 @@
       const tglStr = now.toLocaleDateString('id-ID') + " " + now.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
 
       let textPrint = "";
-      textPrint += "\x1B\x40"; // Init printer
+      textPrint += "\x1B\x40"; 
       textPrint += CENTER;
       textPrint += "LANANG 2 BAHAGIA\n";
       textPrint += "Jl. Raya Jagapura Lor - Nyibanda\n";
@@ -1500,8 +1548,7 @@
       textPrint += `TOTAL UTANG : Rp ${totalHutang.toLocaleString('id-ID')}\n`;
       textPrint += "--------------------------------\n";
       textPrint += CENTER + "Terima Kasih Atas Kerjasamanya\n";
-      textPrint += CENTER + "Kunjungi Situs Kami\n";
-      textPrint += CENTER + "Scann QR Kode Dibawah ini\n\n";
+      textPrint += CENTER + "Scan QR Kode Dibawah ini\n\n";
       const qrUrl = "https://reang-bit.github.io/LANANG-2-BAHAGIA/";
       const storeLength = qrUrl.length + 3;
       const pL = String.fromCharCode(storeLength % 256);
@@ -1516,87 +1563,6 @@
 
       await kirimDataRawKePrinter(textPrint);
     }
-
-    // Fungsi Cetak Thermal Rekap Harian
-async function cetakThermalRekapHarian(tanggalRekap, listTransaksi, totalOmset) {
-  const ESC = "\x1B";
-  const GS = "\x1D";
-  const CENTER = ESC + "\x61\x31";
-  const LEFT = ESC + "\x61\x30";
-  const CUT = "\x1D\x56\x42\x00";
-
-  let textPrint = "";
-  textPrint += "\x1B\x40"; // Init printer
-  textPrint += CENTER;
-  textPrint += "LANANG 2 BAHAGIA\n";
-  textPrint += "REKAPITULASI HARIAN\n";
-  textPrint += `Tgl: ${tanggalRekap}\n`;
-  textPrint += "--------------------------------\n";
-  textPrint += LEFT;
-
-  if (Array.isArray(listTransaksi) && listTransaksi.length > 0) {
-    listTransaksi.forEach((tx, index) => {
-      textPrint += `${index + 1}. ${tx.waktu || ''} - ${tx.pembeli || 'Umum'}\n`;
-      textPrint += `   Total: Rp ${(tx.total || 0).toLocaleString('id-ID')}\n`;
-    });
-  } else {
-    textPrint += "Tidak ada transaksi pada tanggal ini.\n";
-  }
-
-  textPrint += "--------------------------------\n";
-  textPrint += CENTER;
-  textPrint += `TOTAL OMSET HARIAN:\n`;
-  textPrint += `Rp ${(totalOmset || 0).toLocaleString('id-ID')}\n`;
-  textPrint += "--------------------------------\n";
-  textPrint += "**Terimakasih**\n\n" + CUT;
-
-  if (typeof kirimDataRawKePrinter === 'function') {
-    await kirimDataRawKePrinter(textPrint);
-  } else {
-    console.error("Fungsi kirimDataRawKePrinter belum didefinisikan.");
-  }
-}
-
-// Fungsi Cetak Thermal Rekap Bulanan
-async function cetakThermalRekapBulanan(bulanTahun, listRekapHarian, totalOmsetBulanan) {
-  const ESC = "\x1B";
-  const GS = "\x1D";
-  const CENTER = ESC + "\x61\x31";
-  const LEFT = ESC + "\x61\x30";
-  const CUT = "\x1D\x56\x42\x00";
-
-  let textPrint = "";
-  textPrint += "\x1B\x40"; // Init printer
-  textPrint += CENTER;
-  textPrint += "LANANG 2 BAHAGIA\n";
-  textPrint += "REKAPITULASI BULANAN\n";
-  textPrint += `Bulan: ${bulanTahun}\n`;
-  textPrint += "--------------------------------\n";
-  textPrint += LEFT;
-
-  if (Array.isArray(listRekapHarian) && listRekapHarian.length > 0) {
-    listRekapHarian.forEach((harian) => {
-      textPrint += `Tgl ${harian.tanggal}: ${harian.jumlahTransaksi} Transaksi\n`;
-      textPrint += `  Subtotal: Rp ${(harian.totalOmset || 0).toLocaleString('id-ID')}\n`;
-    });
-  } else {
-    textPrint += "Tidak ada data pada bulan ini.\n";
-  }
-
-  textPrint += "--------------------------------\n";
-  textPrint += CENTER;
-  textPrint += `TOTAL OMSET BULANAN:\n`;
-  textPrint += `Rp ${(totalOmsetBulanan || 0).toLocaleString('id-ID')}\n`;
-  textPrint += "--------------------------------\n";
-  textPrint += "**Terimakasih**\n\n" + CUT;
-
-  if (typeof kirimDataRawKePrinter === 'function') {
-    await kirimDataRawKePrinter(textPrint);
-  } else {
-    console.error("Fungsi kirimDataRawKePrinter belum didefinisikan.");
-  }
-}
-    
 
     function tambahBarangBaru(e) {
       e.preventDefault();
@@ -1814,7 +1780,6 @@ async function cetakThermalRekapBulanan(bulanTahun, listRekapHarian, totalOmsetB
               `;
             });
 
-            // ESC/POS JSON encoder stringify safe for inline parameter
             const encodedListTrx = encodeURIComponent(JSON.stringify(data.listTransaksi));
 
             card.innerHTML = `
@@ -1824,7 +1789,7 @@ async function cetakThermalRekapBulanan(bulanTahun, listRekapHarian, totalOmsetB
                   <p class="text-xs text-slate-500">Sisa Hutang: <span class="font-extrabold text-rose-600">Rp ${data.totalHutang.toLocaleString('id-ID')}</span></p>
                 </div>
                 <div class="flex items-center gap-2 flex-wrap">
-                  <button onclick="cetakThermalDaftarHutang('${data.pembeli}', ${data.totalHutang}, JSON.decode || JSON.parse(decodeURIComponent('${encodedListTrx}')))" class="px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-1.5">
+                  <button onclick="cetakThermalDaftarHutang('${data.pembeli}', ${data.totalHutang}, JSON.parse(decodeURIComponent('${encodedListTrx}')))" class="px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-1.5">
                     <span>🦷</span> Cetak Thermal
                   </button>
                   <button onclick="bukaModalBayarUtang('${data.pembeli}', ${data.totalHutang})" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-md transition">
@@ -2135,9 +2100,14 @@ async function cetakThermalRekapBulanan(bulanTahun, listRekapHarian, totalOmsetB
               <h3 class="text-base font-extrabold text-slate-900">📅 Tanggal: ${h.tanggal}</h3>
               <p class="text-xs text-slate-500">Total Omset Harian: <strong class="text-emerald-600 font-black">Rp ${h.totalOmset.toLocaleString('id-ID')}</strong></p>
             </div>
-            <button onclick="cetakBiasaRekap('harian', '${h.tanggal}')" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1.5">
-              <span>🖨️</span> Print Rekap Harian
-            </button>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button onclick="cetakThermalRekapHarian('${h.tanggal}')" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1.5">
+                <span>🦷</span> Print Thermal Harian
+              </button>
+              <button onclick="cetakBiasaRekap('harian', '${h.tanggal}')" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1.5">
+                <span>🖨️</span> Print Biasa
+              </button>
+            </div>
           </div>
 
           <div class="overflow-x-auto border border-slate-100 rounded-2xl">
@@ -2180,9 +2150,14 @@ async function cetakThermalRekapBulanan(bulanTahun, listRekapHarian, totalOmsetB
               <h3 class="text-base font-extrabold text-slate-900">🗓️ Bulan Laporan: ${b.bulan}</h3>
               <p class="text-xs text-slate-500">Total Omset Bulanan: <strong class="text-emerald-600 font-black">Rp ${b.totalOmset.toLocaleString('id-ID')}</strong></p>
             </div>
-            <button onclick="cetakBiasaRekap('bulanan', '${b.bulan}')" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1.5">
-              <span>🖨️</span> Print Rekap Bulanan
-            </button>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button onclick="cetakThermalRekapBulanan('${b.bulan}')" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1.5">
+                <span>🦷</span> Print Thermal Bulanan
+              </button>
+              <button onclick="cetakBiasaRekap('bulanan', '${b.bulan}')" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1.5">
+                <span>🖨️</span> Print Biasa
+              </button>
+            </div>
           </div>
 
           <div class="bg-slate-50 p-4 rounded-2xl text-xs space-y-2 border border-slate-100">
