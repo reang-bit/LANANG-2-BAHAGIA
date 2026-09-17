@@ -1879,51 +1879,61 @@
       if (activeSubHutang === 'pembeli') {
         const pembeliHutangMap = {};
 
+        // 1. Kumpulkan semua transaksi (baik transaksi utang maupun cicilan/pembayaran) per pelanggan
+        const pembeliSemuaTrxMap = {};
         cacheDataRekap.rekapPembeliBulanan.forEach(item => {
           if (filterBln && item.bulan !== filterBln) return;
 
-          let sisaHutangTotal = 0;
-          let listTrxHutang = [];
-
           item.listTransaksi.forEach(trx => {
+            const namaPlg = trx.pembeli || item.pembeli;
+            if (!pembeliSemuaTrxMap[namaPlg]) {
+              pembeliSemuaTrxMap[namaPlg] = [];
+            }
+            pembeliSemuaTrxMap[namaPlg].push(trx);
+          });
+        });
+
+        // 2. Hitung sisa utang per pelanggan dengan memperhitungkan cicilan yang sudah dibayar
+        Object.keys(pembeliSemuaTrxMap).forEach(namaPlg => {
+          const listTrx = pembeliSemuaTrxMap[namaPlg];
+          
+          let totalUtangAwal = 0;
+          let totalCicilan = 0;
+          let listTrxHutangAktif = [];
+
+          listTrx.forEach(trx => {
             if (filterTgl && trx.tanggal !== filterTgl) return;
+            
             if (keyword) {
               const matchPembeli = trx.pembeli.toLowerCase().includes(keyword);
               const matchItem = trx.items.toLowerCase().includes(keyword);
               if (!matchPembeli && !matchItem) return;
             }
 
+            // Jika transaksi adalah utang (kembali < 0)
             if (trx.kembali < 0) {
-              const hutangNominal = Math.abs(trx.kembali);
-              sisaHutangTotal += hutangNominal;
-              listTrxHutang.push(trx);
+              const nominalUtang = Math.abs(trx.kembali);
+              totalUtangAwal += nominalUtang;
+              listTrxHutangAktif.push({ ...trx, sisaTrx: nominalUtang });
+            } 
+            // Jika transaksi adalah bentuk pembayaran / cicilan utang
+            else if (trx.items.toLowerCase().includes('pelunasan utang') || trx.items.toLowerCase().includes('cicilan')) {
+              totalCicilan += (trx.bayar || trx.kembali || 0);
             }
           });
 
-          if (sisaHutangTotal > 0) {
-            const namaPlg = item.pembeli;
-            if (!pembeliHutangMap[namaPlg]) {
-              pembeliHutangMap[namaPlg] = { pembeli: namaPlg, totalHutang: 0, listTransaksi: [] };
-            }
-            pembeliHutangMap[namaPlg].totalHutang += sisaHutangTotal;
-            pembeliHutangMap[namaPlg].listTransaksi.push(...listTrxHutang);
-          }
-        });
+          // Kurangi utang dengan total cicilan yang masuk
+          let sisaHutangBersih = Math.max(0, totalUtangAwal - totalCicilan);
 
-        const arrHutang = Object.values(pembeliHutangMap);
-
-        if (arrHutang.length === 0) {
-          container.innerHTML = `<div class="bg-white p-8 rounded-3xl text-center text-slate-400 font-semibold border border-slate-200">Tidak ada tanggungan hutang pelanggan ditemukan</div>`;
-        } else {
-          arrHutang.forEach(data => {
-            grandTotalHutang += data.totalHutang;
-            setPelangganHutang.add(data.pembeli);
+          if (sisaHutangBersih > 0) {
+            grandTotalHutang += sisaHutangBersih;
+            setPelangganHutang.add(namaPlg);
 
             const card = document.createElement('div');
             card.className = "bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 space-y-4 hover:shadow-md transition";
             
             let rowsHtml = '';
-            data.listTransaksi.forEach(t => {
+            listTrxHutangAktif.forEach(t => {
               rowsHtml += `
                 <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
                   <td class="py-3 px-4 font-mono">${t.tanggal} (${t.waktu})</td>
@@ -1935,19 +1945,28 @@
               `;
             });
 
-            const encodedListTrx = encodeURIComponent(JSON.stringify(data.listTransaksi));
+            if (totalCicilan > 0) {
+              rowsHtml += `
+                <tr class="bg-emerald-50/50 font-semibold text-xs text-emerald-800">
+                  <td colspan="4" class="py-2.5 px-4 text-right">Total Cicilan / Pembayaran Masuk:</td>
+                  <td class="py-2.5 px-4 text-right font-mono">- Rp ${totalCicilan.toLocaleString('id-ID')}</td>
+                </tr>
+              `;
+            }
+
+            const encodedListTrx = encodeURIComponent(JSON.stringify(listTrxHutangAktif));
 
             card.innerHTML = `
               <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
                 <div>
-                  <h3 class="text-base font-extrabold text-slate-900">${data.pembeli}</h3>
-                  <p class="text-xs text-slate-500">Sisa Hutang: <span class="font-extrabold text-rose-600">Rp ${data.totalHutang.toLocaleString('id-ID')}</span></p>
+                  <h3 class="text-base font-extrabold text-slate-900">${namaPlg}</h3>
+                  <p class="text-xs text-slate-500">Sisa Hutang Bersih: <span class="font-extrabold text-rose-600">Rp ${sisaHutangBersih.toLocaleString('id-ID')}</span></p>
                 </div>
                 <div class="flex items-center gap-2 flex-wrap">
-                  <button onclick="cetakThermalDaftarHutang('${data.pembeli}', ${data.totalHutang}, JSON.parse(decodeURIComponent('${encodedListTrx}')))" class="px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-1.5">
+                  <button onclick="cetakThermalDaftarHutang('${namaPlg}', ${sisaHutangBersih}, JSON.parse(decodeURIComponent('${encodedListTrx}')))" class="px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-1.5">
                     <span>🦷</span> Cetak Thermal
                   </button>
-                  <button onclick="bukaModalBayarUtang('${data.pembeli}', ${data.totalHutang})" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-md transition">
+                  <button onclick="bukaModalBayarUtang('${namaPlg}', ${sisaHutangBersih})" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-md transition">
                     💳 Bayar / Cicil
                   </button>
                 </div>
@@ -1960,8 +1979,8 @@
                       <th class="p-3 pl-4">Tanggal</th>
                       <th class="p-3">Rincian Item</th>
                       <th class="p-3 text-right">Total</th>
-                      <th class="p-3 text-right">Bayar</th>
-                      <th class="p-3 pr-4 text-right">Sisa Hutang</th>
+                      <th class="p-3 text-right">Bayar Awal</th>
+                      <th class="p-3 pr-4 text-right">Utang Awal</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100">
@@ -1971,8 +1990,8 @@
               </div>
             `;
             container.appendChild(card);
-          });
-        }
+          }
+        });
       }
 
       document.getElementById('textTotalSeluruhHutang').innerText = "Rp " + grandTotalHutang.toLocaleString('id-ID');
